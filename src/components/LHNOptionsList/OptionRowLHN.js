@@ -224,7 +224,11 @@ const OptionRowLHN = (props) => {
                                     <Icon src={Expensicons.Pencil} height={16} width={16} />
                                 </View>
                             )}
-                            {optionItem.hasOutstandingIOU && !optionItem.isIOUReportOwner && <Icon src={Expensicons.DotIndicator} fill={colors.green} />}
+                            {optionItem.hasOutstandingIOU && !optionItem.isIOUReportOwner && (
+                                <View style={styles.ml2}>
+                                    <Icon src={Expensicons.DotIndicator} fill={colors.green} />
+                                </View>
+                            )}
                             {optionItem.isPinned && (
                                 <View
                                     style={styles.ml2}
