@@ -244,7 +244,7 @@ class AttachmentModal extends PureComponent {
     }
 
     render() {
-        const source = this.state.source;
+        const source = this.props.source;
         return (
             <>
                 <Modal
