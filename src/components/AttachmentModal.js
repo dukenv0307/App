@@ -95,6 +95,14 @@ class AttachmentModal extends PureComponent {
         this.updateConfirmButtonVisibility = this.updateConfirmButtonVisibility.bind(this);
     }
 
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.source !== this.state.source) {
+            this.setState({
+                source: nextProps.source
+            })
+        }
+    }
+
     /**
      * Helps to navigate between next/previous attachments
      * by setting sourceURL and file in state
@@ -148,7 +156,7 @@ class AttachmentModal extends PureComponent {
         }
 
         if (this.props.onConfirm) {
-            this.props.onConfirm(lodashExtend(this.state.file, {source: this.state.source}));
+            // this.props.onConfirm(lodashExtend(this.state.file, {source: this.state.source}));
         }
 
         this.setState({isModalOpen: false});
@@ -210,7 +218,7 @@ class AttachmentModal extends PureComponent {
             return;
         }
 
-        if (file instanceof File) {
+        if (file instanceof File) {validateAndDisplayFileToUpload
             const source = URL.createObjectURL(file);
             const modalType = this.getModalType(source, file);
             this.setState({
@@ -244,7 +252,7 @@ class AttachmentModal extends PureComponent {
     }
 
     render() {
-        const source = this.props.source;
+        const source = this.state.source;
         return (
             <>
                 <Modal
@@ -276,7 +284,7 @@ class AttachmentModal extends PureComponent {
                                 source={this.props.source}
                                 onToggleKeyboard={this.updateConfirmButtonVisibility}
                             />
-                        ) : this.state.source && this.state.shouldLoadAttachment && (
+                        ) : Boolean(this.state.source) && this.state.shouldLoadAttachment && (
                             <AttachmentView
                                 source={source}
                                 isAuthTokenRequired={this.props.isAuthTokenRequired}
@@ -286,7 +294,7 @@ class AttachmentModal extends PureComponent {
                         )}
                     </View>
                     {/* If we have an onConfirm method show a confirmation button */}
-                    {this.props.onConfirm && (
+                    {Boolean(this.props.onConfirm) && (
                         <SafeAreaConsumer>
                             {({safeAreaPaddingBottomStyle}) => (
                                 <Animated.View style={[StyleUtils.fade(this.state.confirmButtonFadeAnimation), safeAreaPaddingBottomStyle]}>
