@@ -95,7 +95,7 @@ class AttachmentModal extends PureComponent {
         this.updateConfirmButtonVisibility = this.updateConfirmButtonVisibility.bind(this);
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         if (nextProps.source !== this.state.source) {
             this.setState({
                 source: nextProps.source
