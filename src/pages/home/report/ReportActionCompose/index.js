@@ -197,6 +197,7 @@ class ReportActionCompose extends React.Component {
 
             // If we are on a small width device then don't show last 3 items from conciergePlaceholderOptions
             conciergePlaceholderRandomIndex: _.random(this.props.translate('reportActionCompose.conciergePlaceholderOptions').length - (this.props.isSmallScreenWidth ? 4 : 1)),
+            placeholderOptionRandom: _.random(1),
             suggestedEmojis: [],
             highlightedEmojiIndex: 0,
             colonIndex: -1,
@@ -334,7 +335,9 @@ class ReportActionCompose extends React.Component {
                 return this.props.translate('reportActionCompose.blockedFromConcierge');
             }
 
-            return this.props.translate('reportActionCompose.conciergePlaceholderOptions')[this.state.conciergePlaceholderRandomIndex];
+            if (this.state.placeholderOptionRandom === 1) {
+                return this.props.translate('reportActionCompose.conciergePlaceholderOptions')[this.state.conciergePlaceholderRandomIndex];
+            }
         }
 
         return this.props.translate('reportActionCompose.writeSomething');
@@ -721,6 +724,7 @@ class ReportActionCompose extends React.Component {
     }
 
     render() {
+        console.log(this.state.placeholderOptionRandom);
         const reportParticipants = _.without(lodashGet(this.props.report, 'participants', []), this.props.currentUserPersonalDetails.login);
         const participantsWithoutExpensifyEmails = _.difference(reportParticipants, CONST.EXPENSIFY_EMAILS);
         const reportRecipient = this.props.personalDetails[participantsWithoutExpensifyEmails[0]];
