@@ -230,15 +230,16 @@ class WorkspaceReimburseView extends React.Component {
                         },
                     ]}
                 >
-                    <View style={[styles.mv3, styles.flexRow, styles.flexWrap]}>
+                    <View style={[styles.mv3, styles.flexRow, styles.flexWrap, styles.alignItemsCenter]}>
                         <Text>
                             {this.props.translate('workspace.reimburse.captureNoVBACopyBeforeEmail')}
-                            <CopyTextToClipboard
-                                text="receipts@expensify.com"
-                                textStyles={[styles.textBlue]}
-                            />
-                            <Text>{this.props.translate('workspace.reimburse.captureNoVBACopyAfterEmail')}</Text>
                         </Text>
+                        <CopyTextToClipboard
+                            text="receipts@expensify.com"
+                            textStyles={[styles.textBlue]}
+                        />
+                        <Text>{this.props.translate('workspace.reimburse.captureNoVBACopyAfterEmail')}</Text>
+                        
                     </View>
                 </Section>
 

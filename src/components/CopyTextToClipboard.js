@@ -61,8 +61,9 @@ class CopyTextToClipboard extends React.Component {
         return (
             <View
                 style={[styles.flexRow, styles.cursorPointer, styles.alignItemsCenter]}
+                // suppressHighlighting
             >
-                <Text style={this.props.textStyles}>{this.props.text}</Text>
+                <Text style={this.props.textStyles}>{`${this.props.text} `}</Text>
                 <Tooltip text={tooltipText}>
                     <Pressable
                         focusable
@@ -70,7 +71,8 @@ class CopyTextToClipboard extends React.Component {
                         accessibilityLabel={tooltipText}
                         style={
                             ({hovered, pressed}) => [
-                                styles.reportActionContextMenuMiniButton,
+                                styles.p1,
+                                {borderRadius: 100},
                                 StyleUtils.getButtonBackgroundColorStyle(getButtonState(hovered, pressed, this.state.showCheckmark)),
                             ]
                         }
@@ -79,7 +81,6 @@ class CopyTextToClipboard extends React.Component {
                             <Icon
                                 src={icon}
                                 fill={StyleUtils.getIconFillColor(getButtonState(hovered, pressed, this.state.showCheckmark))}
-                                // fill="#ccc"
                                 width={variables.iconSizeSmall}
                                 height={variables.iconSizeSmall}
                             />
