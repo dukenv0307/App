@@ -13,7 +13,12 @@ import withLocalize, {withLocalizePropTypes} from '../../components/withLocalize
 import * as IOU from '../../libs/actions/IOU';
 import * as CurrencySymbolUtils from '../../libs/CurrencySymbolUtils';
 import {withNetwork} from '../../components/OnyxProvider';
+import CONST from '../../CONST';
+import themeColors from '../../styles/themes/default';
+import * as Expensicons from '../../components/Icon/Expensicons';
+import styles from '../../styles/styles';
 
+const greenCheckmark = {src: Expensicons.Checkmark, color: themeColors.success};
 /**
  * IOU Currency selection for selecting currency
  */
@@ -29,12 +34,21 @@ const propTypes = {
         // ISO4217 Code for the currency
         ISO4217: PropTypes.string,
     })),
+    
+    /** Holds data related to IOU view state, rather than the underlying IOU data. */
+    iou: PropTypes.shape({
+        /** Selected Currency Code of the current IOU */
+        selectedCurrencyCode: PropTypes.string,
+    }),
 
     ...withLocalizePropTypes,
 };
 
 const defaultProps = {
     currencyList: {},
+    iou: {
+        selectedCurrencyCode: CONST.CURRENCY.USD,
+    },
 };
 
 class IOUCurrencySelection extends Component {
@@ -78,6 +92,8 @@ class IOUCurrencySelection extends Component {
         return _.map(this.props.currencyList, (currencyInfo, currencyCode) => ({
             text: `${currencyCode} - ${CurrencySymbolUtils.getLocalizedCurrencySymbol(this.props.preferredLocale, currencyCode)}`,
             currencyCode,
+            customIcon: currencyCode === this.props.iou.selectedCurrencyCode ? greenCheckmark : undefined,
+            boldStyle: currencyCode === this.props.iou.selectedCurrencyCode,
             keyForList: currencyCode,
         }));
     }
@@ -124,9 +140,11 @@ class IOUCurrencySelection extends Component {
                             onSelectRow={this.confirmCurrencySelection}
                             value={this.state.searchValue}
                             onChangeText={this.changeSearchValue}
+                            optionHoveredStyle={styles.hoveredComponentBG}
                             placeholderText={this.props.translate('common.search')}
                             headerMessage={headerMessage}
                             safeAreaPaddingBottomStyle={safeAreaPaddingBottomStyle}
+                            initiallyFocusedOptionKey={_.get(_.filter(this.state.currencyData, cr => cr.currencyCode === this.props.iou.selectedCurrencyCode)[0], 'keyForList')}
                         />
                     </>
                 )}
@@ -142,6 +160,7 @@ export default compose(
     withLocalize,
     withOnyx({
         currencyList: {key: ONYXKEYS.CURRENCY_LIST},
+        iou: {key: ONYXKEYS.IOU}
     }),
     withNetwork(),
 )(IOUCurrencySelection);
