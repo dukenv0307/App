@@ -335,7 +335,7 @@ class ReportActionCompose extends React.Component {
                 return this.props.translate('reportActionCompose.blockedFromConcierge');
             }
 
-            if (this.state.placeholderOptionRandom === 1) {
+            if (lodashGet(this.props.report, 'participants', []).length === 1 || this.state.placeholderOptionRandom === 1) {
                 return this.props.translate('reportActionCompose.conciergePlaceholderOptions')[this.state.conciergePlaceholderRandomIndex];
             }
         }
