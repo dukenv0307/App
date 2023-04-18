@@ -35,6 +35,8 @@ const propTypes = {
         type: PropTypes.string,
     })),
 
+    reportScreenReportID: PropTypes.string,
+
     route: PropTypes.shape({
         params: PropTypes.shape({
             openOnAdminRoom: PropTypes.bool,
@@ -48,6 +50,7 @@ const defaultProps = {
     reports: {},
     betas: [],
     policies: {},
+    reportScreenReportID: '',
 };
 
 /**
@@ -100,6 +103,13 @@ class MainDrawerNavigator extends Component {
         if (!this.initialParams.reportID) {
             const state = this.props.navigation.getState();
             const reportScreenKey = lodashGet(state, 'routes[0].state.routes[0].key', '');
+            console.log(this.props.reportScreenReportID);
+            const reportScreenReportID = this.props.reportScreenReportID.includes('/r');
+
+            if (!reportScreenReportID) {
+                Navigation.setParams(initialNextParams, reportScreenKey);
+            }
+
             Navigation.setParams(initialNextParams, reportScreenKey);
         }
         this.initialParams = initialNextParams;
@@ -155,5 +165,8 @@ export default withOnyx({
     },
     policies: {
         key: ONYXKEYS.COLLECTION.POLICY,
+    },
+    reportScreenReportID: {
+        key: 'reportScreenReportID',
     },
 })(MainDrawerNavigator);

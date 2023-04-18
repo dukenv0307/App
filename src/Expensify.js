@@ -173,7 +173,11 @@ function Expensify(props) {
             setIsSplashShown(false);
 
             // If the app is opened from a deep link, get the reportID (if exists) from the deep link and navigate to the chat report
-            Linking.getInitialURL().then(url => Report.openReportFromDeepLink(url));
+            Linking.getInitialURL().then((url) => {
+                console.log('url', url);
+                Onyx.set('reportScreenReportID', url);
+                Report.openReportFromDeepLink(url);
+            });
         }
     }, [props.isSidebarLoaded, isNavigationReady, isSplashShown, isAuthenticated]);
 
