@@ -224,6 +224,7 @@ export default {
             'Ask me how to scan a receipt!',
             'Ask me how to get a free corporate card!',
         ],
+        writeSomthingOrAskForHelp: 'Write something or ask for help...',
         blockedFromConcierge: 'Communication is barred',
         fileUploadFailed: 'Upload failed. File is not supported.',
         localTime: ({user, time}) => `It's ${time} for ${user}`,

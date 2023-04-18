@@ -330,14 +330,17 @@ class ReportActionCompose extends React.Component {
      * @return {String}
      */
     getInputPlaceholder() {
+        if (ReportUtils.isConciergeChatReport(this.props.report)) {
+            return this.props.translate('reportActionCompose.conciergePlaceholderOptions')[this.state.conciergePlaceholderRandomIndex];
+        }
+
         if (ReportUtils.chatIncludesConcierge(this.props.report)) {
             if (User.isBlockedFromConcierge(this.props.blockedFromConcierge)) {
                 return this.props.translate('reportActionCompose.blockedFromConcierge');
             }
 
-            if (lodashGet(this.props.report, 'participants', []).length === 1 || this.state.placeholderOptionRandom === 1) {
-                return this.props.translate('reportActionCompose.conciergePlaceholderOptions')[this.state.conciergePlaceholderRandomIndex];
-            }
+            return this.props.translate('reportActionCompose.writeSomthingOrAskForHelp');
+
         }
 
         return this.props.translate('reportActionCompose.writeSomething');
