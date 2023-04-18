@@ -219,7 +219,7 @@ export default function getTooltipStyles(
             //      so the pointer's center lines up with the tooltipWidth's center.
             //   3) Due to the tip start from the left edge of wrapper Tooltip so we have to remove the
             //      horizontalShift which is added to adjust it into the Window
-            left: -horizontalShift + ((tooltipWidth / 2) - (POINTER_WIDTH / 2)),
+            left: Math.min(-horizontalShift, tooltipWidth / 2 - POINTER_WIDTH / 2 - variables.componentBorderRadiusSmall) + ((tooltipWidth / 2) - (POINTER_WIDTH / 2)),
 
             opacity,
         },
