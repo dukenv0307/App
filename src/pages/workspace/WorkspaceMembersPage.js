@@ -34,6 +34,7 @@ import TextInput from '../../components/TextInput';
 import KeyboardDismissingFlatList from '../../components/KeyboardDismissingFlatList';
 import withCurrentUserPersonalDetails from '../../components/withCurrentUserPersonalDetails';
 import * as PolicyUtils from '../../libs/PolicyUtils';
+import { isSearchStringMatch } from '../../libs/OptionsListUtils';
 
 const propTypes = {
     /** The personal details of the person who is logged in */
@@ -328,11 +329,11 @@ class WorkspaceMembersPage extends React.Component {
         });
         data = _.sortBy(data, value => value.displayName.toLowerCase());
         const searchValue = this.state.searchValue.trim().toLowerCase();
-        data = _.filter(data, member => this.isKeywordMatch(member.displayName, searchValue)
-            || this.isKeywordMatch(member.login, searchValue)
-            || this.isKeywordMatch(member.phoneNumber, searchValue)
-            || this.isKeywordMatch(member.firstName, searchValue)
-            || this.isKeywordMatch(member.lastName, searchValue));
+        data = _.filter(data, member => searchValue === '' || isSearchStringMatch(searchValue, member.displayName)
+            || isSearchStringMatch(searchValue, member.login)
+            || isSearchStringMatch(searchValue, member.phoneNumber)
+            || isSearchStringMatch(searchValue, member.firstName)
+            || isSearchStringMatch(searchValue, member.lastName));
 
         data = _.reject(data, (member) => {
             // If this policy is owned by Expensify then show all support (expensify.com or team.expensify.com) emails

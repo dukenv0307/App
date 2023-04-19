@@ -890,6 +890,7 @@ function getHeaderMessage(hasSelectableOptions, hasUserToInvite, searchValue, ma
 
 export {
     addSMSDomainIfPhoneNumber,
+    isSearchStringMatch,
     isCurrentUser,
     getSearchOptions,
     getNewChatOptions,
