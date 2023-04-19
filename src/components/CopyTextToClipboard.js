@@ -59,9 +59,9 @@ class CopyTextToClipboard extends React.Component {
         const tooltipText = this.props.translate(`reportActionContextMenu.${this.state.showCheckmark ? 'copied' : 'copyToClipboard'}`);
         const icon = this.state.showCheckmark ? Expensicons.Checkmark : Expensicons.Copy;
         return (
-            <View
-                style={[styles.flexRow, styles.cursorPointer, styles.alignItemsCenter]}
-                // suppressHighlighting
+            <Text
+                style={[styles.flexRow, styles.cursorPointer]}
+                suppressHighlighting
             >
                 <Text style={this.props.textStyles}>{`${this.props.text} `}</Text>
                 <Tooltip text={tooltipText}>
@@ -83,11 +83,12 @@ class CopyTextToClipboard extends React.Component {
                                 fill={StyleUtils.getIconFillColor(getButtonState(hovered, pressed, this.state.showCheckmark))}
                                 width={variables.iconSizeSmall}
                                 height={variables.iconSizeSmall}
+                                inline
                             />
                         )} 
                     </Pressable>
                 </Tooltip>
-            </View>
+            </Text>
         );
     }
 }
