@@ -211,6 +211,9 @@ class DetailsPage extends React.PureComponent {
     }
 }
 
+
+
+
 DetailsPage.propTypes = propTypes;
 DetailsPage.defaultProps = defaultProps;
 
