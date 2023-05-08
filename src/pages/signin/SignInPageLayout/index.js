@@ -39,6 +39,7 @@ const propTypes = {
 
 const SignInPageLayout = (props) => {
     const scrollViewRef = useRef(null);
+    const inputRef = useRef(null);
     let containerStyles = [styles.flex1, styles.signInPageInner];
     let contentContainerStyles = [styles.flex1, styles.flexRow];
 
@@ -49,6 +50,14 @@ const SignInPageLayout = (props) => {
         containerStyles = [styles.flex1];
         contentContainerStyles = [styles.flex1, styles.flexColumn];
     }
+
+    const children = React.Children.map(props.children, (child) => {
+        if (!React.isValidElement(child)) {
+            return child;
+        }
+        return React.cloneElement(child, { inputRef })
+    });
+
 
     return (
         <View style={containerStyles}>
@@ -61,7 +70,7 @@ const SignInPageLayout = (props) => {
                             shouldShowWelcomeText={props.shouldShowWelcomeText}
                             shouldShowWelcomeHeader={props.shouldShowWelcomeHeader}
                         >
-                            {props.children}
+                            {children}
                         </SignInPageContent>
                         <ScrollView
                             style={[styles.flex1, StyleUtils.getBackgroundColorStyle(themeColors.signInPage)]}
@@ -86,7 +95,7 @@ const SignInPageLayout = (props) => {
                                         props.isLargeScreenWidth ? styles.ph25 : {}]}
                                     >
                                         <SignInPageHero />
-                                        <Footer scrollViewRef={scrollViewRef} />
+                                        <Footer scrollViewRef={scrollViewRef} inputRef={inputRef}/>
                                     </View>
                                 </View>
                             </View>
@@ -110,11 +119,11 @@ const SignInPageLayout = (props) => {
                                 shouldShowWelcomeText={props.shouldShowWelcomeText}
                                 shouldShowWelcomeHeader={props.shouldShowWelcomeHeader}
                             >
-                                {props.children}
+                                {children}
                             </SignInPageContent>
                         </View>
                         <View style={[styles.flex0]}>
-                            <Footer scrollViewRef={scrollViewRef} />
+                            <Footer scrollViewRef={scrollViewRef} inputRef={inputRef}/>
                         </View>
                     </ScrollView>
                 )}

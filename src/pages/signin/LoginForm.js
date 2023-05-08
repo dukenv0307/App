@@ -70,6 +70,7 @@ class LoginForm extends React.Component {
         this.onTextInput = this.onTextInput.bind(this);
         this.validateAndSubmitForm = this.validateAndSubmitForm.bind(this);
 
+        this.input = this.props.inputRef;
         this.state = {
             formError: false,
             login: '',
@@ -84,17 +85,17 @@ class LoginForm extends React.Component {
         if (!canFocusInputOnScreenFocus() || !this.input || !this.props.isVisible) {
             return;
         }
-        this.input.focus();
+        this.input.current.focus();
     }
 
     componentDidUpdate(prevProps) {
         if (!prevProps.blurOnSubmit && this.props.blurOnSubmit) {
-            this.input.blur();
+            this.input.current.blur();
         }
         if (prevProps.isVisible || !this.props.isVisible) {
             return;
         }
-        this.input.focus();
+        this.input.current.focus();
     }
 
     /**
@@ -172,7 +173,7 @@ class LoginForm extends React.Component {
             <>
                 <View accessibilityLabel={this.props.translate('loginForm.loginForm')} style={[styles.mt3]}>
                     <TextInput
-                        ref={el => this.input = el}
+                        ref={this.props.inputRef}
                         label={this.props.translate('loginForm.phoneOrEmail')}
                         value={this.state.login}
                         autoCompleteType="username"

@@ -26,15 +26,21 @@ const propTypes = {
         // eslint-disable-next-line react/forbid-prop-types
         current: PropTypes.any,
     }),
+
+    inputRef: PropTypes.shape({
+        // eslint-disable-next-line react/forbid-prop-types
+        current: PropTypes.any,
+    }),
     ...windowDimensionsPropTypes,
     ...withLocalizePropTypes,
 };
 
 const defaultProps = {
     scrollViewRef: undefined,
+    inputRef: undefined
 };
 
-const navigateHome = (scrollViewRef) => {
+const navigateHome = (scrollViewRef, inputRef) => {
     const currentRoute = navigationRef.current.getCurrentRoute();
     if (
         currentRoute.name === screens.HOME
@@ -45,6 +51,11 @@ const navigateHome = (scrollViewRef) => {
             y: 0,
             animated: true,
         });
+
+        if (inputRef && inputRef.current) {
+            inputRef.current.focus();
+        }
+
     } else {
         Navigation.navigate();
     }
@@ -204,7 +215,7 @@ const Footer = (props) => {
                                                 <TextLink
                                                     style={[styles.footerRow, hovered ? styles.textBlue : {}]}
                                                     href={row.link}
-                                                    onPress={row.onPress ? () => row.onPress(props.scrollViewRef) : undefined}
+                                                    onPress={row.onPress ? () => row.onPress(props.scrollViewRef, props.inputRef) : undefined}
                                                 >
                                                     {props.translate(row.translationPath)}
                                                 </TextLink>
