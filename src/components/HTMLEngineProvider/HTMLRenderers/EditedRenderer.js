@@ -22,7 +22,7 @@ const EditedRenderer = (props) => {
             {...defaultRendererProps}
             fontSize={variables.fontSizeSmall}
             color={themeColors.textSupporting}
-            style={[editedLabelStyles, isPendingDelete && styles.offlineFeedback.deleted]}
+            style={[editedLabelStyles]}
         >
             {/* Native devices do not support margin between nested text */}
             <Text
@@ -31,7 +31,11 @@ const EditedRenderer = (props) => {
             >
                 {' '}
             </Text>
-            {props.translate('reportActionCompose.edited')}
+            <Text
+                style={[isPendingDelete && styles.offlineFeedback.deleted]}
+            >
+                {props.translate('reportActionCompose.edited')}
+            </Text>
         </Text>
     );
 };
