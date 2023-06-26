@@ -399,14 +399,9 @@ class ReimbursementAccountPage extends React.Component {
 
         if (currentStep === CONST.BANK_ACCOUNT.STEP.BANK_ACCOUNT) {
             return (
-                <BankAccountStep
+                <ValidationStep
                     reimbursementAccount={this.props.reimbursementAccount}
-                    reimbursementAccountDraft={this.props.reimbursementAccountDraft}
                     onBackButtonPress={this.goBack}
-                    receivedRedirectURI={getPlaidOAuthReceivedRedirectURI()}
-                    plaidLinkOAuthToken={this.props.plaidLinkToken}
-                    getDefaultStateForField={this.getDefaultStateForField}
-                    policyName={policyName}
                 />
             );
         }

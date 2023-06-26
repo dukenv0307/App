@@ -140,56 +140,56 @@ class ValidationStep extends React.Component {
                     guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_BANK_ACCOUNT}
                     shouldShowStepCounter={!isVerifying}
                 />
-                {maxAttemptsReached && (
+                {/* {maxAttemptsReached && (
                     <View style={[styles.m5, styles.flex1]}>
                         <Text>
                             {this.props.translate('validationStep.maxAttemptsReached')} {this.props.translate('common.please')}{' '}
                             <TextLink onPress={Report.navigateToConciergeChat}>{this.props.translate('common.contactUs')}</TextLink>.
                         </Text>
                     </View>
-                )}
-                {!maxAttemptsReached && state === BankAccount.STATE.PENDING && (
-                    <Form
-                        formID={ONYXKEYS.REIMBURSEMENT_ACCOUNT}
-                        submitButtonText={this.props.translate('validationStep.buttonText')}
-                        onSubmit={this.submit}
-                        validate={this.validate}
-                        style={[styles.mh5, styles.flexGrow1]}
-                    >
-                        <View style={[styles.mb2]}>
-                            <Text style={[styles.mb5]}>{this.props.translate('validationStep.description')}</Text>
-                            <Text style={[styles.mb2]}>{this.props.translate('validationStep.descriptionCTA')}</Text>
-                        </View>
-                        <View style={[styles.mv5]}>
-                            <TextInput
-                                inputID="amount1"
-                                shouldSaveDraft
-                                containerStyles={[styles.mb1]}
-                                placeholder="1.52"
-                                keyboardType="decimal-pad"
-                            />
-                            <TextInput
-                                inputID="amount2"
-                                shouldSaveDraft
-                                containerStyles={[styles.mb1]}
-                                placeholder="1.53"
-                                keyboardType="decimal-pad"
-                            />
-                            <TextInput
-                                shouldSaveDraft
-                                inputID="amount3"
-                                containerStyles={[styles.mb1]}
-                                placeholder="1.54"
-                                keyboardType="decimal-pad"
-                            />
-                        </View>
-                        {!requiresTwoFactorAuth && (
-                            <View style={[styles.mln5, styles.mrn5]}>
-                                <Enable2FAPrompt />
-                            </View>
-                        )}
-                    </Form>
-                )}
+                )} */}
+                {/* {!maxAttemptsReached && state === BankAccount.STATE.PENDING && ( */}
+                <Form
+                    formID={ONYXKEYS.REIMBURSEMENT_ACCOUNT}
+                    submitButtonText={this.props.translate('validationStep.buttonText')}
+                    onSubmit={this.submit}
+                    validate={this.validate}
+                    style={[styles.mh5, styles.flexGrow1]}
+                >
+                    <View style={[styles.mb2]}>
+                        <Text style={[styles.mb5]}>{this.props.translate('validationStep.description')}</Text>
+                        <Text style={[styles.mb2]}>{this.props.translate('validationStep.descriptionCTA')}</Text>
+                    </View>
+                    <View style={[styles.mv5]}>
+                        <TextInput
+                            inputID="amount1"
+                            shouldSaveDraft
+                            containerStyles={[styles.mb1]}
+                            placeholder="1.52"
+                            keyboardType="decimal-pad"
+                        />
+                        <TextInput
+                            inputID="amount2"
+                            shouldSaveDraft
+                            containerStyles={[styles.mb1]}
+                            placeholder="1.53"
+                            keyboardType="decimal-pad"
+                        />
+                        <TextInput
+                            shouldSaveDraft
+                            inputID="amount3"
+                            containerStyles={[styles.mb1]}
+                            placeholder="1.54"
+                            keyboardType="decimal-pad"
+                        />
+                    </View>
+                    {/* {!requiresTwoFactorAuth && ( */}
+                    <View style={[styles.mln5, styles.mrn5]}>
+                        <Enable2FAPrompt />
+                    </View>
+                    {/* )} */}
+                </Form>
+                {/* )} */}
                 {isVerifying && (
                     <ScrollView style={[styles.flex1]}>
                         <Section
