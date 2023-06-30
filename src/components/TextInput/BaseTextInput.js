@@ -20,6 +20,7 @@ import FormHelpMessage from '../FormHelpMessage';
 import isInputAutoFilled from '../../libs/isInputAutoFilled';
 import * as Pressables from '../Pressable';
 import withLocalize from '../withLocalize';
+import SafeToFocusContext from '../../pages/home/ReportScreenContext';
 
 const PressableWithoutFeedback = Pressables.PressableWithoutFeedback;
 class BaseTextInput extends Component {
@@ -52,6 +53,7 @@ class BaseTextInput extends Component {
         this.togglePasswordVisibility = this.togglePasswordVisibility.bind(this);
         this.dismissKeyboardWhenBackgrounded = this.dismissKeyboardWhenBackgrounded.bind(this);
         this.storePrefixLayoutDimensions = this.storePrefixLayoutDimensions.bind(this);
+        this.handleAutoFocus = this.handleAutoFocus.bind(this);
     }
 
     componentDidMount() {
@@ -59,19 +61,13 @@ class BaseTextInput extends Component {
             this.appStateSubscription = AppState.addEventListener('change', this.dismissKeyboardWhenBackgrounded);
         }
 
-        // We are manually managing focus to prevent this issue: https://github.com/Expensify/App/issues/4514
-        if (!this.props.autoFocus || !this.input) {
-            return;
-        }
-
-        if (this.props.shouldDelayFocus) {
-            this.focusTimeout = setTimeout(() => this.input.focus(), CONST.ANIMATED_TRANSITION);
-            return;
-        }
-        this.input.focus();
+        this.handleAutoFocus();
     }
 
     componentDidUpdate(prevProps) {
+        if (!prevProps.isSafeToAutoFocus && this.context.isSafeToAutoFocus) {
+            this.handleAutoFocus();
+        }
         // Activate or deactivate the label when value is changed programmatically from outside
         const inputValue = _.isUndefined(this.props.value) ? this.input.value : this.props.value;
         if ((_.isUndefined(inputValue) || this.state.value === inputValue) && _.isEqual(prevProps.selection, this.props.selection)) {
@@ -162,6 +158,24 @@ class BaseTextInput extends Component {
 
         this.animateLabel(styleConst.ACTIVE_LABEL_TRANSLATE_Y, styleConst.ACTIVE_LABEL_SCALE);
         this.isLabelActive = true;
+    }
+
+    handleAutoFocus() {
+        // this part is added
+        if (!this.context.isSafeToAutoFocus) {
+            return;
+        }
+
+        // this part is the same as previous logic
+        if (!this.props.autoFocus || !this.input) {
+            return;
+        }
+
+        if (this.props.shouldDelayFocus) {
+            this.focusTimeout = setTimeout(() => this.input.focus(), CONST.ANIMATED_TRANSITION);
+            return;
+        }
+        this.input.focus();
     }
 
     deactivateLabel() {
@@ -398,6 +412,7 @@ class BaseTextInput extends Component {
     }
 }
 
+BaseTextInput.contextType = SafeToFocusContext;
 BaseTextInput.propTypes = baseTextInputPropTypes.propTypes;
 BaseTextInput.defaultProps = baseTextInputPropTypes.defaultProps;
 
