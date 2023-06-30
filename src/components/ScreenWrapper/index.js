@@ -19,7 +19,7 @@ import withWindowDimensions from '../withWindowDimensions';
 import withEnvironment from '../withEnvironment';
 import toggleTestToolsModal from '../../libs/actions/TestTool';
 import CustomDevMenu from '../CustomDevMenu';
-import SafeToFocusContext from '../../pages/home/ReportScreenContext';
+import SafeToFocusContext from '../../pages/home/SafeToFocusContext';
 
 class ScreenWrapper extends React.Component {
     constructor(props) {

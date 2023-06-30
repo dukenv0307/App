@@ -65,7 +65,7 @@ class BaseTextInput extends Component {
     }
 
     componentDidUpdate(prevProps) {
-        if (!prevProps.isSafeToAutoFocus && this.context.isSafeToAutoFocus) {
+        if (!prevProps.isSafeToAutoFocus && this.context && this.context.isSafeToAutoFocus) {
             this.handleAutoFocus();
         }
         // Activate or deactivate the label when value is changed programmatically from outside
@@ -162,7 +162,7 @@ class BaseTextInput extends Component {
 
     handleAutoFocus() {
         // this part is added
-        if (!this.context.isSafeToAutoFocus) {
+        if (!this.context || !this.context.isSafeToAutoFocus) {
             return;
         }
 
