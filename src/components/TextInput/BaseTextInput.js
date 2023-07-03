@@ -165,7 +165,7 @@ class BaseTextInput extends Component {
 
     handleAutoFocus() {
         // this part is added
-        if (this.context || !this.context.isSafeToAutoFocus) {
+        if (this.context && !this.context.isSafeToAutoFocus) {
             return;
         }
 
