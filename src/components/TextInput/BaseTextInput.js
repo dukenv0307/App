@@ -46,6 +46,7 @@ class BaseTextInput extends Component {
 
         this.input = null;
         this.isLabelActive = activeLabel;
+        this.previousContext = null;
         this.onPress = this.onPress.bind(this);
         this.onFocus = this.onFocus.bind(this);
         this.onBlur = this.onBlur.bind(this);
@@ -62,10 +63,11 @@ class BaseTextInput extends Component {
         }
 
         this.handleAutoFocus();
+        this.previousContext = this.context
     }
 
     componentDidUpdate(prevProps) {
-        if (!prevProps.isSafeToAutoFocus && this.context && this.context.isSafeToAutoFocus) {
+        if (this.previousContext && !this.previousContext.isSafeToAutoFocus && this.context && this.context.isSafeToAutoFocus) {
             this.handleAutoFocus();
         }
         // Activate or deactivate the label when value is changed programmatically from outside
@@ -87,6 +89,7 @@ class BaseTextInput extends Component {
         if (inputValue === '') {
             this.input.clear();
         }
+        this.previousContext = this.context
     }
 
     componentWillUnmount() {
@@ -162,7 +165,7 @@ class BaseTextInput extends Component {
 
     handleAutoFocus() {
         // this part is added
-        if (!this.context || !this.context.isSafeToAutoFocus) {
+        if (this.context || !this.context.isSafeToAutoFocus) {
             return;
         }
 
