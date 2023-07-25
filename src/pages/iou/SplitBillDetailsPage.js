@@ -18,6 +18,7 @@ import withReportOrNotFound from '../home/report/withReportOrNotFound';
 import FullPageNotFoundView from '../../components/BlockingViews/FullPageNotFoundView';
 import CONST from '../../CONST';
 import HeaderWithBackButton from '../../components/HeaderWithBackButton';
+import FullscreenLoadingIndicator from '../../components/FullscreenLoadingIndicator';
 
 const propTypes = {
     /* Onyx Props */
@@ -48,6 +49,10 @@ const propTypes = {
 const defaultProps = {
     personalDetails: {},
     reportActions: {},
+    report: {
+        isLoadingReportActions: true
+    },
+    isLoadingReportData: true,
 };
 
 /**
@@ -63,6 +68,17 @@ function getReportID(route) {
 }
 
 function SplitBillDetailsPage(props) {
+    
+
+    console.log(getReportID(props.route));
+    const shouldShowLoading = (_.isEmpty(props.report) && props.isLoadingReportData) || (props.report.isLoadingReportActions && _.isEmpty(props.reportActions));
+
+    if (shouldShowLoading) {
+        return (
+            <FullscreenLoadingIndicator />
+        )
+    }
+
     const reportAction = props.reportActions[`${props.route.params.reportActionID.toString()}`];
     const participantAccountIDs = reportAction.originalMessage.participantAccountIDs;
     const participants = OptionsListUtils.getParticipantsOptions(
@@ -77,7 +93,7 @@ function SplitBillDetailsPage(props) {
 
     return (
         <ScreenWrapper>
-            <FullPageNotFoundView shouldShow={_.isEmpty(props.report) || _.isEmpty(reportAction)}>
+            <FullPageNotFoundView shouldShow={!shouldShowLoading && (_.isEmpty(props.report) || _.isEmpty(reportAction))}>
                 <HeaderWithBackButton title={props.translate('common.details')} />
                 <View
                     pointerEvents="box-none"
@@ -108,7 +124,6 @@ SplitBillDetailsPage.displayName = 'SplitBillDetailsPage';
 
 export default compose(
     withLocalize,
-    withReportOrNotFound,
     withOnyx({
         personalDetails: {
             key: ONYXKEYS.PERSONAL_DETAILS_LIST,
@@ -117,5 +132,11 @@ export default compose(
             key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${getReportID(route)}`,
             canEvict: false,
         },
+        report: {
+            key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT}${getReportID(route)}`,
+        },
+        isLoadingReportData: {
+            key: ONYXKEYS.IS_LOADING_REPORT_DATA
+        }
     }),
 )(SplitBillDetailsPage);

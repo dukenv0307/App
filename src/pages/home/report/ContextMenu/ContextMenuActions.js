@@ -118,7 +118,7 @@ export default [
         successTextTranslateKey: '',
         successIcon: null,
         shouldShow: (type, reportAction, isArchivedRoom, betas, anchor, isChronosReport, reportID) =>
-            type === CONTEXT_MENU_TYPES.REPORT_ACTION && reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT && !ReportUtils.isThreadFirstChat(reportAction, reportID),
+            type === CONTEXT_MENU_TYPES.REPORT_ACTION && reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT && !ReportUtils.isThreadFirstChat(reportAction, reportID) && !isArchivedRoom,
         onPress: (closePopover, {reportAction, reportID}) => {
             if (closePopover) {
                 hideContextMenu(false, () => {

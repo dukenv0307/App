@@ -38,7 +38,9 @@ export default function (WrappedComponent) {
 
     const defaultProps = {
         forwardedRef: () => {},
-        report: {},
+        report: {
+            isLoadingReportActions: true
+        },
         policies: {},
         betas: [],
         isLoadingReportData: true,

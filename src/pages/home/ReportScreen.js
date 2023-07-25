@@ -254,6 +254,7 @@ class ReportScreen extends React.Component {
 
     render() {
         const reportID = getReportID(this.props.route);
+        console.log(this.props.route);
         const {addWorkspaceRoomOrChatPendingAction, addWorkspaceRoomOrChatErrors} = ReportUtils.getReportOfflinePendingActionAndErrors(this.props.report);
         const screenWrapperStyle = [styles.appContent, styles.flex1, {marginTop: this.props.viewportOffsetTop}];
 
