@@ -2,6 +2,8 @@ import React, {memo, useState} from 'react';
 import {View, ActivityIndicator} from 'react-native';
 import _ from 'underscore';
 import PropTypes from 'prop-types';
+
+
 import Str from 'expensify-common/lib/str';
 import styles from '../styles/styles';
 import PDFView from './PDFView';
