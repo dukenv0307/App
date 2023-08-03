@@ -760,10 +760,6 @@ export {
     cancelTask,
     dismissModalAndClearOutTaskInfo,
     getTaskAssigneeAccountID,
-<<<<<<< Updated upstream
     canModifyTask,
-=======
-    isTaskAssigneeOrTaskOwner,
     updateAsigneeID
->>>>>>> Stashed changes
 };
