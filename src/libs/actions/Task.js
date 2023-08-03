@@ -527,13 +527,14 @@ function setAssigneeValue(assignee, assigneeAccountID, shareDestination, isCurre
     if (!newAssigneeAccountID) {
         newAssigneeAccountID = UserUtils.generateAccountID(assignee);
     }
+    let reportID
     if (!isCurrentUser) {
         let newChat = {};
         const chat = ReportUtils.getChatByParticipants([newAssigneeAccountID]);
         if (!chat) {
             newChat = ReportUtils.buildOptimisticChatReport([newAssigneeAccountID]);
         }
-        const reportID = chat ? chat.reportID : newChat.reportID;
+        reportID = chat ? chat.reportID : newChat.reportID;
 
         if (!shareDestination) {
             setShareDestinationValue(reportID);
@@ -543,7 +544,7 @@ function setAssigneeValue(assignee, assigneeAccountID, shareDestination, isCurre
     }
 
     // This is only needed for creation of a new task and so it should only be stored locally
-    Onyx.merge(ONYXKEYS.TASK, {assignee, assigneeAccountID: newAssigneeAccountID});
+    Onyx.merge(ONYXKEYS.TASK, {assignee, assigneeAccountID: newAssigneeAccountID, reportID});
 }
 
 /**
@@ -737,6 +738,10 @@ function canModifyTask(taskReport, sessionAccountID) {
     return ReportUtils.isAllowedToComment(parentReport);
 }
 
+function updateAsigneeID(asigneeID) {
+    Onyx.merge(ONYXKEYS.TASK, {assigneeAccountID: asigneeID});
+}
+
 export {
     createTaskAndNavigate,
     editTaskAndNavigate,
@@ -755,5 +760,10 @@ export {
     cancelTask,
     dismissModalAndClearOutTaskInfo,
     getTaskAssigneeAccountID,
+<<<<<<< Updated upstream
     canModifyTask,
+=======
+    isTaskAssigneeOrTaskOwner,
+    updateAsigneeID
+>>>>>>> Stashed changes
 };

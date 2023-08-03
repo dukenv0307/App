@@ -74,6 +74,13 @@ function NewTaskPage(props) {
     useEffect(() => {
         setErrorMessage('');
 
+        if (props.task.reportID) {
+            const assigneeReport = lodashGet(props.reports, `${ONYXKEYS.COLLECTION.REPORT}${props.task.reportID}`, undefined);
+            if(assigneeReport) {
+                Task.updateAsigneeID(assigneeReport.participantAccountIDs[0])
+            }
+        }
+
         // If we have an assignee, we want to set the assignee data
         // If there's an issue with the assignee chosen, we want to notify the user
         if (props.task.assignee) {
