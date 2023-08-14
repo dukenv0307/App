@@ -20,6 +20,9 @@ import reportPropTypes from '../reportPropTypes';
 import ROUTES from '../../ROUTES';
 
 import * as Task from '../../libs/actions/Task';
+import FullPageNotFoundView from '../../components/BlockingViews/FullPageNotFoundView';
+import * as ReportUtils from '../../libs/ReportUtils';
+import withCurrentUserPersonalDetails from '../../components/withCurrentUserPersonalDetails';
 
 const propTypes = {
     /** Beta features list */
@@ -115,6 +118,10 @@ function TaskAssigneeSelectorModal(props) {
         return props.reports[`${ONYXKEYS.COLLECTION.REPORT}${props.route.params.reportID}`];
     }, [props.reports, props.route.params]);
 
+    const isOpen = ReportUtils.isOpenTaskReport(report);
+    const canModifyTask = Task.canModifyTask(report, props.currentUserPersonalDetails.accountID);
+    const disableState = !canModifyTask || !isOpen;
+
     const sections = useMemo(() => {
         const sectionsList = [];
         let indexOffset = 0;
@@ -182,7 +189,7 @@ function TaskAssigneeSelectorModal(props) {
     return (
         <ScreenWrapper includeSafeAreaPaddingBottom={false}>
             {({didScreenTransitionEnd, safeAreaPaddingBottomStyle}) => (
-                <>
+                <FullPageNotFoundView shouldShow={disableState}>
                     <HeaderWithBackButton
                         title={props.translate('task.assignee')}
                         onBackButtonPress={() => (lodashGet(props.route.params, 'reportID') ? Navigation.dismissModal() : Navigation.goBack(ROUTES.NEW_TASK))}
@@ -200,7 +207,7 @@ function TaskAssigneeSelectorModal(props) {
                             safeAreaPaddingBottomStyle={safeAreaPaddingBottomStyle}
                         />
                     </View>
-                </>
+                </FullPageNotFoundView>
             )}
         </ScreenWrapper>
     );
@@ -212,6 +219,7 @@ TaskAssigneeSelectorModal.defaultProps = defaultProps;
 
 export default compose(
     withLocalize,
+    withCurrentUserPersonalDetails,
     withOnyx({
         reports: {
             key: ONYXKEYS.COLLECTION.REPORT,

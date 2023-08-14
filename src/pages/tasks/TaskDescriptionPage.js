@@ -14,6 +14,9 @@ import compose from '../../libs/compose';
 import * as Task from '../../libs/actions/Task';
 import CONST from '../../CONST';
 import focusAndUpdateMultilineInputRange from '../../libs/focusAndUpdateMultilineInputRange';
+import FullPageNotFoundView from '../../components/BlockingViews/FullPageNotFoundView';
+import * as ReportUtils from '../../libs/ReportUtils';
+import withCurrentUserPersonalDetails from '../../components/withCurrentUserPersonalDetails';
 
 const propTypes = {
     /** Current user session */
@@ -35,7 +38,9 @@ const defaultProps = {
 
 function TaskDescriptionPage(props) {
     const validate = useCallback(() => ({}), []);
-
+    const isOpen = ReportUtils.isOpenTaskReport(props.report);
+    const canModifyTask = Task.canModifyTask(props.report, props.currentUserPersonalDetails.accountID);
+    const disableState = !canModifyTask || !isOpen;
     const submit = useCallback(
         (values) => {
             // Set the description of the report in the store and then call Task.editTaskReport
@@ -53,31 +58,33 @@ function TaskDescriptionPage(props) {
             onEntryTransitionEnd={() => focusAndUpdateMultilineInputRange(inputRef.current)}
             shouldEnableMaxHeight
         >
-            <HeaderWithBackButton title={props.translate('task.task')} />
-            <Form
-                style={[styles.flexGrow1, styles.ph5]}
-                formID={ONYXKEYS.FORMS.EDIT_TASK_FORM}
-                validate={validate}
-                onSubmit={submit}
-                submitButtonText={props.translate('common.save')}
-                enabledWhenOffline
-            >
-                <View style={[styles.mb4]}>
-                    <TextInput
-                        accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
-                        inputID="description"
-                        name="description"
-                        label={props.translate('newTaskPage.descriptionOptional')}
-                        accessibilityLabel={props.translate('newTaskPage.descriptionOptional')}
-                        defaultValue={(props.report && props.report.description) || ''}
-                        ref={(el) => (inputRef.current = el)}
-                        autoGrowHeight
-                        submitOnEnter
-                        containerStyles={[styles.autoGrowHeightMultilineInput]}
-                        textAlignVertical="top"
-                    />
-                </View>
-            </Form>
+            <FullPageNotFoundView shouldShow={disableState}>
+                <HeaderWithBackButton title={props.translate('task.task')} />
+                <Form
+                    style={[styles.flexGrow1, styles.ph5]}
+                    formID={ONYXKEYS.FORMS.EDIT_TASK_FORM}
+                    validate={validate}
+                    onSubmit={submit}
+                    submitButtonText={props.translate('common.save')}
+                    enabledWhenOffline
+                >
+                    <View style={[styles.mb4]}>
+                        <TextInput
+                            accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
+                            inputID="description"
+                            name="description"
+                            label={props.translate('newTaskPage.descriptionOptional')}
+                            accessibilityLabel={props.translate('newTaskPage.descriptionOptional')}
+                            defaultValue={(props.report && props.report.description) || ''}
+                            ref={(el) => (inputRef.current = el)}
+                            autoGrowHeight
+                            submitOnEnter
+                            containerStyles={[styles.autoGrowHeightMultilineInput]}
+                            textAlignVertical="top"
+                        />
+                    </View>
+                </Form>
+            </FullPageNotFoundView>
         </ScreenWrapper>
     );
 }
@@ -87,6 +94,7 @@ TaskDescriptionPage.defaultProps = defaultProps;
 
 export default compose(
     withLocalize,
+    withCurrentUserPersonalDetails,
     withOnyx({
         session: {
             key: ONYXKEYS.SESSION,

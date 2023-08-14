@@ -14,6 +14,9 @@ import reportPropTypes from '../reportPropTypes';
 import compose from '../../libs/compose';
 import * as Task from '../../libs/actions/Task';
 import CONST from '../../CONST';
+import FullPageNotFoundView from '../../components/BlockingViews/FullPageNotFoundView';
+import * as ReportUtils from '../../libs/ReportUtils';
+import withCurrentUserPersonalDetails from '../../components/withCurrentUserPersonalDetails';
 
 const propTypes = {
     /** The report currently being looked at */
@@ -34,6 +37,10 @@ const defaultProps = {
 };
 
 function TaskTitlePage(props) {
+    const isOpen = ReportUtils.isOpenTaskReport(props.report);
+    const canModifyTask = Task.canModifyTask(props.report, props.currentUserPersonalDetails.accountID);
+    const disableState = !canModifyTask || !isOpen;
+
     /**
      * @param {Object} values
      * @param {String} values.title
@@ -66,27 +73,29 @@ function TaskTitlePage(props) {
             onEntryTransitionEnd={() => inputRef.current && inputRef.current.focus()}
             shouldEnableMaxHeight
         >
-            <HeaderWithBackButton title={props.translate('task.task')} />
-            <Form
-                style={[styles.flexGrow1, styles.ph5]}
-                formID={ONYXKEYS.FORMS.EDIT_TASK_FORM}
-                validate={validate}
-                onSubmit={submit}
-                submitButtonText={props.translate('common.save')}
-                enabledWhenOffline
-            >
-                <View style={[styles.mb4]}>
-                    <TextInput
-                        accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
-                        inputID="title"
-                        name="title"
-                        label={props.translate('task.title')}
-                        accessibilityLabel={props.translate('task.title')}
-                        defaultValue={(props.report && props.report.reportName) || ''}
-                        ref={(el) => (inputRef.current = el)}
-                    />
-                </View>
-            </Form>
+            <FullPageNotFoundView shouldShow={disableState}>
+                <HeaderWithBackButton title={props.translate('task.task')} />
+                <Form
+                    style={[styles.flexGrow1, styles.ph5]}
+                    formID={ONYXKEYS.FORMS.EDIT_TASK_FORM}
+                    validate={validate}
+                    onSubmit={submit}
+                    submitButtonText={props.translate('common.save')}
+                    enabledWhenOffline
+                >
+                    <View style={[styles.mb4]}>
+                        <TextInput
+                            accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
+                            inputID="title"
+                            name="title"
+                            label={props.translate('task.title')}
+                            accessibilityLabel={props.translate('task.title')}
+                            defaultValue={(props.report && props.report.reportName) || ''}
+                            ref={(el) => (inputRef.current = el)}
+                        />
+                    </View>
+                </Form>
+            </FullPageNotFoundView>
         </ScreenWrapper>
     );
 }
@@ -96,6 +105,7 @@ TaskTitlePage.defaultProps = defaultProps;
 
 export default compose(
     withLocalize,
+    withCurrentUserPersonalDetails,
     withOnyx({
         session: {
             key: ONYXKEYS.SESSION,
