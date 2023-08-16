@@ -181,6 +181,7 @@ function ReportActionsView(props) {
             if (unsubscribe) {
                 unsubscribe();
             }
+            didSubscribeToReportTypingEvents.current = false;
             Report.unsubscribeFromReportChannel(reportID);
         };
 
@@ -271,12 +272,11 @@ function ReportActionsView(props) {
         // any `pendingFields.createChat` or `pendingFields.addWorkspaceRoom` fields are set to null.
         // Existing reports created will have empty fields for `pendingFields`.
         const didCreateReportSuccessfully = !props.report.pendingFields || (!props.report.pendingFields.addWorkspaceRoom && !props.report.pendingFields.createChat);
-        if (!didSubscribeToReportTypingEvents.current && didCreateReportSuccessfully) {
+        if (!didSubscribeToReportTypingEvents.current && didCreateReportSuccessfully && isReportFullyVisible) {
             Report.subscribeToReportTypingEvents(reportID);
             didSubscribeToReportTypingEvents.current = true;
         }
-    }, [props.report, didSubscribeToReportTypingEvents, reportID]);
-
+    }, [props.report, didSubscribeToReportTypingEvents, reportID, isReportFullyVisible]);
     /**
      * Retrieves the next set of report actions for the chat once we are nearing the end of what we are currently
      * displaying.
