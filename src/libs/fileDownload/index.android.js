@@ -41,13 +41,17 @@ function handleDownload(url, fileName) {
 
         // Android files will download to Download directory
         const path = dirs.DownloadDir;
-        const attachmentName = FileUtils.appendTimeToFileName(fileName) || FileUtils.getAttachmentName(url);
+        let attachmentName = FileUtils.appendTimeToFileName(fileName) || FileUtils.getAttachmentName(url);
+
+        attachmentName = attachmentName.replaceAll(':', '')
 
         const isLocalFile = url.startsWith('file://');
 
         let attachmentPath = isLocalFile ? url : undefined;
         let fetchedAttachment = Promise.resolve();
 
+        console.log('attachmentName', attachmentName);
+        console.log('download path', path)
         if (!isLocalFile) {
             // Fetching the attachment
             fetchedAttachment = RNFetchBlob.config({
@@ -84,7 +88,8 @@ function handleDownload(url, fileName) {
                 RNFetchBlob.fs.unlink(attachmentPath);
                 FileUtils.showSuccessAlert();
             })
-            .catch(() => {
+            .catch((error) => {
+                console.log('error', error);
                 FileUtils.showGeneralErrorAlert();
             })
             .finally(() => resolve());
