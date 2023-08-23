@@ -6,9 +6,13 @@ import _ from 'underscore';
 import ONYXKEYS from '../../ONYXKEYS';
 import {defaultProps, imagePropTypes} from './imagePropTypes';
 import RESIZE_MODES from './resizeModes';
+import { withNetwork } from '../OnyxProvider';
+import compose from '../../libs/compose';
 
 function Image(props) {
     const {source: propsSource, isAuthTokenRequired, onLoad, session} = props;
+    const [isImageAvailable, setIsImageAvailable] = React.useState(false);
+
     /**
      * Check if the image source is a URL - if so the `encryptedAuthToken` is appended
      * to the source.
@@ -19,10 +23,10 @@ function Image(props) {
             // in the headers of the image request so the authToken is added as a query param.
             // On native the authToken IS passed in the image request headers
             const authToken = lodashGet(session, 'encryptedAuthToken', null);
-            return {uri: `${propsSource.uri}?encryptedAuthToken=${encodeURIComponent(authToken)}`};
+            return {uri: `${propsSource.uri}?encryptedAuthToken=${encodeURIComponent(authToken)}}`};
         }
         return propsSource;
-    }, [propsSource, isAuthTokenRequired, session]);
+    }, [propsSource, isAuthTokenRequired, session/*, props.network.isOffline*/]);
 
     /**
      * The natural image dimensions are retrieved using the updated source
@@ -31,13 +35,19 @@ function Image(props) {
     useEffect(() => {
         // If an onLoad callback was specified then manually call it and pass
         // the natural image dimensions to match the native API
-        if (onLoad == null) {
+        if (onLoad == null/* || props.network.isOffline*/) {
             return;
         }
+        
         RNImage.getSize(source.uri, (width, height) => {
+            setIsImageAvailable(true);
             onLoad({nativeEvent: {width, height}});
         });
-    }, [onLoad, source]);
+    }, [onLoad, source, props.network.isOffline]);
+
+    if (props.network.isOffline && !isImageAvailable) {
+        return null;
+    }
 
     // Omit the props which the underlying RNImage won't use
     const forwardedProps = _.omit(props, ['source', 'onLoad', 'session', 'isAuthTokenRequired']);
@@ -59,11 +69,14 @@ Image.propTypes = imagePropTypes;
 Image.defaultProps = defaultProps;
 
 const ImageWithOnyx = React.memo(
-    withOnyx({
-        session: {
-            key: ONYXKEYS.SESSION,
-        },
-    })(Image),
+    compose(
+        withNetwork(),
+        withOnyx({
+            session: {
+                key: ONYXKEYS.SESSION,
+            },
+        }
+    ))(Image),
     imagePropsAreEqual,
 );
 ImageWithOnyx.resizeMode = RESIZE_MODES;
