@@ -15,6 +15,7 @@ import withLocalize from '../../../components/withLocalize';
 import ReportActionItem from './ReportActionItem';
 import reportActionPropTypes from './reportActionPropTypes';
 import * as ReportActionsUtils from '../../../libs/ReportActionsUtils';
+import {withReportActionsDrafts} from '../../../components/OnyxProvider';
 
 const propTypes = {
     /** Flag to show, hide the thread divider line */
@@ -54,7 +55,7 @@ function ReportActionItemParentAction(props) {
     return (
         <OfflineWithFeedback
             shouldDisableOpacity={Boolean(parentReportAction.pendingAction)}
-            pendingAction={lodashGet(props.report, 'pendingFields.addWorkspaceRoom') || lodashGet(props.report, 'pendingFields.createChat')}
+            pendingAction={props.draftMessage ? null : (lodashGet(props.report, 'pendingFields.addWorkspaceRoom') || lodashGet(props.report, 'pendingFields.createChat'))}
             errors={lodashGet(props.report, 'errorFields.addWorkspaceRoom') || lodashGet(props.report, 'errorFields.createChat')}
             errorRowStyles={[styles.ml10, styles.mr2]}
             onClose={() => Report.navigateToConciergeChatAndDeleteReport(props.report.reportID)}
@@ -91,6 +92,13 @@ export default compose(
         parentReportActions: {
             key: ({parentReportID}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${parentReportID}`,
             canEvict: false,
+        },
+    }),
+    withReportActionsDrafts({
+        propName: 'draftMessage',
+        transformValue: (drafts, props) => {
+            const draftKey = `${ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS}${props.report.reportID}_${props.report.parentReportActionID}`;
+            return lodashGet(drafts, draftKey, '');
         },
     }),
 )(ReportActionItemParentAction);
