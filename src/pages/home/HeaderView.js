@@ -30,6 +30,7 @@ import PressableWithoutFeedback from '../../components/Pressable/PressableWithou
 import PinButton from '../../components/PinButton';
 import TaskHeaderActionButton from '../../components/TaskHeaderActionButton';
 import ParentNavigationSubtitle from '../../components/ParentNavigationSubtitle';
+import * as Session from '../../libs/actions/Session';
 
 const propTypes = {
     /** Toggles the navigationMenu open and closed */
@@ -104,7 +105,8 @@ function HeaderView(props) {
             threeDotMenuItems.push({
                 icon: Expensicons.Checkmark,
                 text: props.translate('task.markAsDone'),
-                onSelected: () => Task.completeTask(props.report, title),
+                isCheckedAnonymous: true,
+                onSelected: Session.checkIfActionIsAllowed(() => Task.completeTask(props.report, title)),
             });
         }
 
@@ -113,7 +115,8 @@ function HeaderView(props) {
             threeDotMenuItems.push({
                 icon: Expensicons.Checkmark,
                 text: props.translate('task.markAsIncomplete'),
-                onSelected: () => Task.reopenTask(props.report, title),
+                isCheckedAnonymous: true,
+                onSelected: Session.checkIfActionIsAllowed(() => Task.reopenTask(props.report, title)),
             });
         }
 
@@ -122,7 +125,8 @@ function HeaderView(props) {
             threeDotMenuItems.push({
                 icon: Expensicons.Trashcan,
                 text: props.translate('common.cancel'),
-                onSelected: () => Task.cancelTask(props.report.reportID, props.report.reportName, props.report.stateNum, props.report.statusNum),
+                isCheckedAnonymous: true,
+                onSelected: Session.checkIfActionIsAllowed(() => Task.cancelTask(props.report.reportID, props.report.reportName, props.report.stateNum, props.report.statusNum)),
             });
         }
     }

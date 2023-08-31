@@ -118,7 +118,7 @@ const MenuItem = React.forwardRef((props, ref) => {
                         }
 
                         props.onPress(e);
-                    }, props.isAnonymousAction)}
+                    }, props.isAnonymousAction || props.isCheckedAnonymous)}
                     onPressIn={() => props.shouldBlockSelection && isSmallScreenWidth && DeviceCapabilities.canUseTouchScreen() && ControlSelection.block()}
                     onPressOut={ControlSelection.unblock}
                     onSecondaryInteraction={props.onSecondaryInteraction}

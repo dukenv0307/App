@@ -102,6 +102,7 @@ function PopoverMenu(props) {
                         description={item.description}
                         onPress={() => selectItem(menuIndex)}
                         focused={focusedIndex === menuIndex}
+                        isCheckedAnonymous={!!item.isCheckedAnonymous}
                     />
                 ))}
             </View>
