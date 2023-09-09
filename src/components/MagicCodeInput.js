@@ -286,6 +286,13 @@ function MagicCodeInput(props) {
                                 textInputContainerStyles={[styles.borderNone]}
                                 inputStyle={[styles.inputTransparent]}
                                 accessibilityRole={CONST.ACCESSIBILITY_ROLE.TEXT}
+                                onBlur={() => {
+                                    if (index !== focusedIndex) {
+                                        return;
+                                    }
+
+                                    blurMagicCodeInput();
+                                }}
                             />
                         </View>
                     </View>
