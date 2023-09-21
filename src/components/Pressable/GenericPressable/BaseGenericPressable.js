@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, forwardRef} from 'react';
+import React, {useCallback, useEffect, useMemo, forwardRef, useRef} from 'react';
 // eslint-disable-next-line no-restricted-imports
 import {Pressable} from 'react-native';
 import _ from 'underscore';
@@ -129,11 +129,24 @@ const GenericPressable = forwardRef((props, ref) => {
     }, [keyboardShortcut, onPressHandler]);
 
     const defaultLongPressHandler = Browser.isMobileChrome() ? () => {} : undefined;
+
+    const innerRef = useRef();
+
     return (
         <Pressable
             hitSlop={shouldUseAutoHitSlop ? hitSlop : undefined}
             onLayout={shouldUseAutoHitSlop ? onLayout : undefined}
-            ref={ref}
+            ref={(_ref) => {
+                if (ref) {
+                    if (typeof ref === 'function') {
+                        ref(_ref)
+                    } else {
+                        ref.current = _ref;
+                    }
+                } 
+                
+                innerRef.current = _ref;
+            }}
             onPress={!isDisabled ? onPressHandler : undefined}
             // In order to prevent haptic feedback, pass empty callback as onLongPress props. Please refer https://github.com/necolas/react-native-web/issues/2349#issuecomment-1195564240
             onLongPress={!isDisabled && onLongPress ? onLongPressHandler : defaultLongPressHandler}
@@ -162,6 +175,14 @@ const GenericPressable = forwardRef((props, ref) => {
             onAccessibilityTap={!isDisabled && onPressHandler}
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...rest}
+            onHoverOut={(e) => {
+                if (props.onHoverOut) {
+                    props.onHoverOut(e);
+                }
+                if (innerRef && innerRef.current) {
+                    innerRef.current.blur();
+                }
+            }}
         >
             {(state) => (_.isFunction(props.children) ? props.children({...state, isScreenReaderActive, isDisabled}) : props.children)}
         </Pressable>
