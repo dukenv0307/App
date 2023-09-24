@@ -32,6 +32,7 @@ const TextInput = forwardRef((props, ref) => {
             autoCompleteType={props.autoCompleteType === 'new-password' ? 'password' : props.autoCompleteType}
             innerRef={ref}
             inputStyle={[styles.baseTextInput, ...props.inputStyle]}
+            shouldUsePressableContainer
         />
     );
 });

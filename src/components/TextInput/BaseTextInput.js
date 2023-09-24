@@ -235,10 +235,12 @@ function BaseTextInput(props) {
     ]);
     const isMultiline = props.multiline || props.autoGrowHeight;
 
+    const Container = props.shouldUsePressableContainer ? PressableWithoutFeedback : View;
+
     return (
         <>
             <View style={styles.pointerEventsNone}>
-                <PressableWithoutFeedback
+                <Container
                     onPress={onPress}
                     focusable={false}
                     accessibilityLabel={props.label}
@@ -367,7 +369,7 @@ function BaseTextInput(props) {
                             )}
                         </View>
                     </View>
-                </PressableWithoutFeedback>
+                </Container>
                 {!_.isEmpty(inputHelpText) && (
                     <FormHelpMessage
                         isError={!_.isEmpty(props.errorText)}
