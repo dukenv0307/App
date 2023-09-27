@@ -120,7 +120,7 @@ function MoneyRequestParticipantsPage({iou, selectedTab, route}) {
                 <View style={styles.flex1}>
                     <HeaderWithBackButton
                         title={headerTitle}
-                        onBackButtonPress={navigateBack}
+                        onBackButtonPress={() => navigateBack(true)}
                     />
                     <MoneyRequestParticipantsSelector
                         ref={(el) => (optionsSelectorRef.current = el)}
