@@ -262,6 +262,9 @@ function ReportActionItem(props) {
                 toggleContextMenuFromActiveReportAction,
                 ReportUtils.isArchivedRoom(originalReport),
                 ReportUtils.chatIncludesChronos(originalReport),
+                false,
+                false,
+                toggleContextMenuFromActiveReportAction
             );
         },
         [props.draftMessage, props.action, props.report.reportID, toggleContextMenuFromActiveReportAction, originalReport, originalReportID],
@@ -311,6 +314,7 @@ function ReportActionItem(props) {
                 />
             );
         } else if (props.action.actionName === CONST.REPORT.ACTIONS.TYPE.REPORTPREVIEW) {
+            console.log('props.action', props.action)
             children = (
                 <ReportPreview
                     iouReportID={ReportActionsUtils.getIOUReportIDFromReportActionPreview(props.action)}

@@ -49,6 +49,8 @@ function PopoverReportActionContextMenu(_props, ref) {
 
     const onPopoverShow = useRef(() => {});
     const onPopoverHide = useRef(() => {});
+
+    const onDeleteModalHideRef = useRef(() => {});
     const onCancelDeleteModal = useRef(() => {});
     const onComfirmDeleteModal = useRef(() => {});
 
@@ -150,6 +152,7 @@ function PopoverReportActionContextMenu(_props, ref) {
         isChronosReport = false,
         isPinnedChat = false,
         isUnreadChat = false,
+        onDeleteModalHide = () => {},
     ) => {
         const nativeEvent = event.nativeEvent || {};
         contextMenuAnchorRef.current = contextMenuAnchor;
@@ -159,6 +162,7 @@ function PopoverReportActionContextMenu(_props, ref) {
 
         onPopoverShow.current = onShow;
         onPopoverHide.current = onHide;
+        onDeleteModalHideRef.current = onDeleteModalHide;
 
         getContextMenuMeasuredLocation().then(({x, y}) => {
             popoverAnchorPosition.current = {
@@ -241,7 +245,10 @@ function PopoverReportActionContextMenu(_props, ref) {
     }, [reportActionRef]);
 
     const hideDeleteModal = () => {
-        callbackWhenDeleteModalHide.current = () => (onCancelDeleteModal.current = runAndResetCallback(onCancelDeleteModal.current));
+        callbackWhenDeleteModalHide.current = () => (onCancelDeleteModal.current = runAndResetCallback(() => {
+            onCancelDeleteModal.current();
+            onDeleteModalHideRef.current();
+        }));
         setIsDeleteCommentConfirmModalVisible(false);
         setShouldSetModalVisibilityForDeleteConfirmation(true);
         setIsRoomArchived(false);

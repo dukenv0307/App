@@ -64,6 +64,7 @@ function showContextMenu(
     isChronosReport = false,
     isPinnedChat = false,
     isUnreadChat = false,
+    onDeleteModalHide = () => {}
 ) {
     if (!contextMenuRef.current) {
         return;
@@ -90,6 +91,7 @@ function showContextMenu(
         isChronosReport,
         isPinnedChat,
         isUnreadChat,
+        onDeleteModalHide
     );
 }
 
