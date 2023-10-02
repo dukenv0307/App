@@ -3,7 +3,6 @@ import _ from 'underscore';
 import PropTypes from 'prop-types';
 import AttachmentModal from '../../../components/AttachmentModal';
 import Navigation from '../../../libs/Navigation/Navigation';
-import * as ReportUtils from '../../../libs/ReportUtils';
 import ROUTES from '../../../ROUTES';
 
 const propTypes = {
@@ -21,14 +20,13 @@ const propTypes = {
 
 function ReportAttachments(props) {
     const reportID = _.get(props, ['route', 'params', 'reportID']);
-    const report = ReportUtils.getReport(reportID);
     const source = decodeURI(_.get(props, ['route', 'params', 'source']));
 
     return (
         <AttachmentModal
             allowDownload
             defaultOpen
-            report={report}
+            reportID={reportID}
             source={source}
             onModalHide={() => Navigation.dismissModal(reportID)}
             onCarouselAttachmentChange={(attachment) => {

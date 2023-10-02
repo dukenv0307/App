@@ -24,7 +24,6 @@ import ConfirmModal from './ConfirmModal';
 import HeaderGap from './HeaderGap';
 import SafeAreaConsumer from './SafeAreaConsumer';
 import addEncryptedAuthTokenToURL from '../libs/addEncryptedAuthTokenToURL';
-import reportPropTypes from '../pages/reportPropTypes';
 import * as Expensicons from './Icon/Expensicons';
 import useWindowDimensions from '../hooks/useWindowDimensions';
 import Navigation from '../libs/Navigation/Navigation';
@@ -72,7 +71,7 @@ const propTypes = {
     headerTitle: PropTypes.string,
 
     /** The report that has this attachment */
-    report: reportPropTypes,
+    reportID: PropTypes.string,
 
     ...withLocalizePropTypes,
 
@@ -91,7 +90,7 @@ const defaultProps = {
     isAuthTokenRequired: false,
     allowDownload: false,
     headerTitle: null,
-    report: {},
+    reportID: '',
     onModalShow: () => {},
     onModalHide: () => {},
     onCarouselAttachmentChange: () => {},
@@ -365,7 +364,7 @@ function AttachmentModal(props) {
                             icon: Expensicons.Camera,
                             text: props.translate('common.replace'),
                             onSelected: () => {
-                                onModalHideCallbackRef.current = () => Navigation.navigate(ROUTES.EDIT_REQUEST.getRoute(props.report.reportID, CONST.EDIT_REQUEST_FIELD.RECEIPT));
+                                onModalHideCallbackRef.current = () => Navigation.navigate(ROUTES.EDIT_REQUEST.getRoute(props.reportID, CONST.EDIT_REQUEST_FIELD.RECEIPT));
                                 closeModal();
                             },
                         },
@@ -378,9 +377,9 @@ function AttachmentModal(props) {
                     shouldOverlay
                 />
                 <View style={styles.imageModalImageCenterContainer}>
-                    {!_.isEmpty(props.report) ? (
+                    {!_.isEmpty(props.reportID) ? (
                         <AttachmentCarousel
-                            report={props.report}
+                            reportID={props.reportID}
                             onNavigate={onNavigate}
                             source={props.source}
                             onClose={closeModal}

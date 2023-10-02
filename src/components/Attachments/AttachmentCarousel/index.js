@@ -20,6 +20,7 @@ import * as Illustrations from '../../Icon/Illustrations';
 import variables from '../../../styles/variables';
 import * as DeviceCapabilities from '../../../libs/DeviceCapabilities';
 import * as ReportActionsUtils from '../../../libs/ReportActionsUtils';
+import FullscreenLoadingIndicator from '../../FullscreenLoadingIndicator';
 
 const viewabilityConfig = {
     // To facilitate paging through the attachments, we want to consider an item "viewable" when it is
@@ -27,7 +28,7 @@ const viewabilityConfig = {
     itemVisiblePercentThreshold: 95,
 };
 
-function AttachmentCarousel({report, reportActions, source, onNavigate, setDownloadButtonVisibility, translate}) {
+function AttachmentCarousel({report, reportActions, source, onNavigate, setDownloadButtonVisibility, translate, isLoadingReportData, reportMetadata}) {
     const scrollRef = useRef(null);
 
     const canUseTouchScreen = DeviceCapabilities.canUseTouchScreen();
@@ -153,6 +154,13 @@ function AttachmentCarousel({report, reportActions, source, onNavigate, setDownl
         [activeSource, canUseTouchScreen, setShouldShowArrows, shouldShowArrows],
     );
 
+    const isLoadingReport = isLoadingReportData && (_.isEmpty(report) || !report.reportID);
+    const isLoadingReportAction = _.isEmpty(reportActions) || reportMetadata.isLoadingReportActions;
+
+    if (isLoadingReport || isLoadingReportAction) {
+        return <FullscreenLoadingIndicator />;
+    }
+
     return (
         <View
             style={[styles.flex1, styles.attachmentCarouselContainer]}
@@ -222,9 +230,18 @@ AttachmentCarousel.defaultProps = defaultProps;
 
 export default compose(
     withOnyx({
+        report: {
+            key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}`,
+        },
         reportActions: {
-            key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report.reportID}`,
+            key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`,
             canEvict: false,
+        },
+        reportMetadata: {
+            key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`,
+        },
+        isLoadingReportData: {
+            key: ONYXKEYS.IS_LOADING_REPORT_DATA,
         },
     }),
     withLocalize,
