@@ -9,6 +9,7 @@ import CONST from '../CONST';
 import ONYXKEYS from '../ONYXKEYS';
 import Log from './Log';
 import isReportMessageAttachment from './isReportMessageAttachment';
+import * as ReportUtils from './ReportUtils';
 
 const allReports = {};
 Onyx.connect({
@@ -350,7 +351,7 @@ function shouldReportActionBeVisible(reportAction, key) {
     }
 
     // All other actions are displayed except thread parents, deleted, or non-pending actions
-    const isDeleted = isDeletedAction(reportAction);
+    const isDeleted = isDeletedAction(reportAction) && !ReportUtils.isCanceledTaskReport(allReports[reportAction.reportID], reportAction);
     const isPending = !!reportAction.pendingAction;
     return !isDeleted || isPending || isDeletedParentAction(reportAction);
 }
