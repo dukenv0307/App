@@ -64,7 +64,7 @@ const propTypes = {
     }),
 
     /** Indicates whether the app is loading initial data */
-    isLoadingReportData: PropTypes.bool,
+    isLoadingApp: PropTypes.bool,
 
     ...withLocalizePropTypes,
 };
@@ -73,7 +73,7 @@ const defaultProps = {
     // When opening someone else's profile (via deep link) before login, this is empty
     personalDetails: {},
     loginList: {},
-    isLoadingReportData: true,
+    isLoadingApp: true,
 };
 
 /**
@@ -108,6 +108,8 @@ function ProfilePage(props) {
     const login = lodashGet(details, 'login', '');
     const timezone = lodashGet(details, 'timezone', {});
 
+    const currentUserLogin = lodashGet(props.personalDetails, `${props.session.accountID}.login`, '');
+
     // If we have a reportID param this means that we
     // arrived here via the ParticipantsPage and should be allowed to navigate back to it
     const shouldShowLocalTime = !ReportUtils.hasAutomatedExpensifyAccountIDs([accountID]) && !_.isEmpty(timezone);
@@ -123,7 +125,7 @@ function ProfilePage(props) {
 
     const isCurrentUser = _.keys(props.loginList).includes(login);
     const hasMinimumDetails = !_.isEmpty(details.avatar);
-    const isLoading = lodashGet(details, 'isLoading', false) || _.isEmpty(details) || props.isLoadingReportData;
+    const isLoading = lodashGet(details, 'isLoading', false) || _.isEmpty(details) || props.isLoadingApp;
 
     // If the API returns an error for some reason there won't be any details and isLoading will get set to false, so we want to show a blocking screen
     const shouldShowBlockingView = !hasMinimumDetails && !isLoading;
@@ -154,7 +156,7 @@ function ProfilePage(props) {
                 pointerEvents="box-none"
                 style={[styles.containerWithSpaceBetween]}
             >
-                {hasMinimumDetails && (
+                {hasMinimumDetails && (!props.isLoadingApp || currentUserLogin) && (
                     <ScrollView>
                         <View style={styles.avatarSectionWrapper}>
                             <AttachmentModal
@@ -254,7 +256,7 @@ function ProfilePage(props) {
                         )}
                     </ScrollView>
                 )}
-                {!hasMinimumDetails && isLoading && <FullScreenLoadingIndicator style={styles.flex1} />}
+                {(!hasMinimumDetails || (props.isLoadingApp && !currentUserLogin)) && isLoading && <FullScreenLoadingIndicator style={styles.flex1} />}
                 {shouldShowBlockingView && (
                     <BlockingView
                         icon={Illustrations.ToddBehindCloud}
@@ -280,11 +282,11 @@ export default compose(
         personalDetails: {
             key: ONYXKEYS.PERSONAL_DETAILS_LIST,
         },
-        loginList: {
-            key: ONYXKEYS.LOGIN_LIST,
+        session: {
+            key: ONYXKEYS.SESSION,
         },
-        isLoadingReportData: {
-            key: ONYXKEYS.IS_LOADING_REPORT_DATA,
+        isLoadingApp: {
+            key: ONYXKEYS.IS_LOADING_APP,
         },
         betas: {
             key: ONYXKEYS.BETAS,
