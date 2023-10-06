@@ -7,6 +7,7 @@ export default {
     LOADING: 'Loading',
     REPORT: 'Report',
     REPORT_ATTACHMENTS: 'ReportAttachments',
+    PROFILE_ATTACHMENTS: 'ProfileAttachment',
     NOT_FOUND: 'not-found',
     TRANSITION_BETWEEN_APPS: 'TransitionBetweenApps',
     VALIDATE_LOGIN: 'ValidateLogin',

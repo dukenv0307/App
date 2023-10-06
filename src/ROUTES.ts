@@ -72,7 +72,10 @@ export default {
     SETTINGS_2FA:                               'settings/security/two-factor-auth',
     SETTINGS_STATUS:                            'settings/profile/status',
     SETTINGS_STATUS_SET:                        'settings/profile/status/set',
-
+    SETTINGS_PROFILE_PHOTO: {
+        route: 'settings/profile/attachment',
+        getRoute: (source: string) => `settings/profile/attachment?source=${source}`,
+    },
     NEW:                                        'new',
     NEW_CHAT:                                   'new/chat',
     NEW_ROOM:                                   'new/room',

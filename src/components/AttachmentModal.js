@@ -52,6 +52,9 @@ const propTypes = {
     /** Optional callback to fire when we want to do something after modal hide. */
     onModalHide: PropTypes.func,
 
+    /** Trigger when we explicity click close button in ProfileAttachment modal */
+    onModalClose: PropTypes.func,
+
     /** Optional callback to fire when we want to do something after attachment carousel changes. */
     onCarouselAttachmentChange: PropTypes.func,
 
@@ -95,6 +98,7 @@ const defaultProps = {
     onModalHide: () => {},
     onCarouselAttachmentChange: () => {},
     isWorkspaceAvatar: false,
+    onModalClose: () => {},
 };
 
 function AttachmentModal(props) {
@@ -313,7 +317,11 @@ function AttachmentModal(props) {
      */
     const closeModal = useCallback(() => {
         setIsModalOpen(false);
-    }, []);
+
+        if (typeof props.onModalClose === 'function') {
+            props.onModalClose();
+        }
+    }, [props]);
 
     /**
      *  open the modal

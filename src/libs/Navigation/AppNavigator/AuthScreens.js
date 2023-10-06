@@ -303,6 +303,18 @@ class AuthScreens extends React.Component {
                         listeners={modalScreenListeners}
                     />
                     <RootStack.Screen
+                        name={SCREENS.PROFILE_ATTACHMENTS}
+                        options={{
+                            headerShown: false,
+                            presentation: 'transparentModal',
+                        }}
+                        getComponent={() => {
+                            const ProfileAttachment = require('../../../pages/settings/Profile/ProfileAttachment').default;
+                            return ProfileAttachment;
+                        }}
+                        listeners={modalScreenListeners}
+                    />
+                    <RootStack.Screen
                         name={SCREENS.NOT_FOUND}
                         options={screenOptions.fullScreen}
                         component={NotFoundPage}

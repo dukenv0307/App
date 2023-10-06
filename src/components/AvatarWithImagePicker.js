@@ -26,6 +26,8 @@ import DotIndicatorMessage from './DotIndicatorMessage';
 import * as Browser from '../libs/Browser';
 import withNavigationFocus, {withNavigationFocusPropTypes} from './withNavigationFocus';
 import compose from '../libs/compose';
+import ROUTES from '../ROUTES';
+import Navigation from '../libs/Navigation/Navigation';
 
 const propTypes = {
     /** Avatar source to display */
@@ -297,7 +299,7 @@ class AvatarWithImagePicker extends React.Component {
                         source={this.props.previewSource}
                         originalFileName={this.props.originalFileName}
                     >
-                        {({show}) => (
+                        {() => (
                             <AttachmentPicker type={CONST.ATTACHMENT_PICKER_TYPE.IMAGE}>
                                 {({openPicker}) => {
                                     const menuItems = [
@@ -329,7 +331,10 @@ class AvatarWithImagePicker extends React.Component {
                                         menuItems.push({
                                             icon: Expensicons.Eye,
                                             text: this.props.translate('avatarWithImagePicker.viewPhoto'),
-                                            onSelected: () => show(),
+                                            onSelected: () => {
+                                                const route = ROUTES.SETTINGS_PROFILE_PHOTO.getRoute(this.props.source);
+                                                Navigation.navigate(route);
+                                            },
                                         });
                                     }
                                     return (
