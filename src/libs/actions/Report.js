@@ -1898,11 +1898,9 @@ function getCurrentUserAccountID() {
 
 /**
  * Leave a report by setting the state to submitted and closed
- *
  * @param {String} reportID
- * @param {Boolean} shouldNavigate should navigate after leaving room or not
  */
-function leaveRoom(reportID, shouldNavigate = true) {
+function leaveRoom(reportID) {
     const report = lodashGet(allReports, [reportID], {});
     const reportKeys = _.keys(report);
 

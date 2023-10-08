@@ -1,6 +1,6 @@
 import React, {useRef, useState, useEffect, useMemo, useCallback} from 'react';
 import {withOnyx} from 'react-native-onyx';
-import {useFocusEffect, useIsFocused} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import PropTypes from 'prop-types';
 import {View} from 'react-native';
 import lodashGet from 'lodash/get';
@@ -365,14 +365,6 @@ function ReportScreen({
         () => (!firstRenderRef.current && !report.reportID && !isOptimisticDelete && !reportMetadata.isLoadingReportActions && !isLoading && !userLeavingStatus) || shouldHideReport,
         [report, reportMetadata, isLoading, shouldHideReport, isOptimisticDelete, userLeavingStatus],
     );
-
-    // When the report screen is unmounted or no longer in focus, and the user has no comments on that thread, call LeaveRoom
-    useEffect(() => {
-        if (isFocused || !isThread || !isNotificationPreferenceHidden) {
-            return;
-        }
-        Report.leaveRoom(reportID, false);
-    }, [isFocused, isThread, isNotificationPreferenceHidden, reportID]);
 
     return (
         <ActionListContext.Provider value={flatListRef}>
