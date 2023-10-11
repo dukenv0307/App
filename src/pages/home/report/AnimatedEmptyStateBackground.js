@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image } from 'react-native';
 import Animated, {SensorType, useAnimatedSensor, useAnimatedStyle, useSharedValue, withSpring} from 'react-native-reanimated';
 import useWindowDimensions from '../../../hooks/useWindowDimensions';
 import * as NumberUtils from '../../../libs/NumberUtils';
@@ -34,8 +35,10 @@ function AnimatedEmptyStateBackground() {
         };
     });
 
+    const ImageComponent = isSmallScreenWidth ? Animated.Image : Image;
+
     return (
-        <Animated.Image
+        <ImageComponent
             pointerEvents="none"
             source={EmptyStateBackgroundImage}
             style={[StyleUtils.getReportWelcomeBackgroundImageStyle(isSmallScreenWidth), animatedStyles]}
