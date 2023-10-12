@@ -23,7 +23,6 @@ import CONST from '../CONST';
 import * as ReportUtils from '../libs/ReportUtils';
 import * as Expensicons from '../components/Icon/Expensicons';
 import MenuItem from '../components/MenuItem';
-import AttachmentModal from '../components/AttachmentModal';
 import PressableWithoutFocus from '../components/Pressable/PressableWithoutFocus';
 import * as Report from '../libs/actions/Report';
 import OfflineWithFeedback from '../components/OfflineWithFeedback';
@@ -104,7 +103,6 @@ function ProfilePage(props) {
     const displayName = details.displayName ? details.displayName : props.translate('common.hidden');
     const avatar = lodashGet(details, 'avatar', UserUtils.getDefaultAvatar());
     const fallbackIcon = lodashGet(details, 'fallbackIcon', '');
-    const originalFileName = lodashGet(details, 'originalFileName', '');
     const login = lodashGet(details, 'login', '');
     const timezone = lodashGet(details, 'timezone', {});
 
@@ -157,32 +155,22 @@ function ProfilePage(props) {
                 {hasMinimumDetails && (
                     <ScrollView>
                         <View style={styles.avatarSectionWrapper}>
-                            <AttachmentModal
-                                headerTitle={displayName}
-                                source={UserUtils.getFullSizeAvatar(avatar, accountID)}
-                                isAuthTokenRequired
-                                originalFileName={originalFileName}
-                                fallbackSource={fallbackIcon}
+                            <PressableWithoutFocus
+                                style={[styles.noOutline]}
+                                onPress={() => Navigation.navigate(ROUTES.PROFILE_AVATAR.getRoute(String(accountID)))}
+                                accessibilityLabel={props.translate('common.profile')}
+                                accessibilityRole={CONST.ACCESSIBILITY_ROLE.IMAGEBUTTON}
                             >
-                                {({show}) => (
-                                    <PressableWithoutFocus
-                                        style={[styles.noOutline]}
-                                        onPress={show}
-                                        accessibilityLabel={props.translate('common.profile')}
-                                        accessibilityRole={CONST.ACCESSIBILITY_ROLE.IMAGEBUTTON}
-                                    >
-                                        <OfflineWithFeedback pendingAction={lodashGet(details, 'pendingFields.avatar', null)}>
-                                            <Avatar
-                                                containerStyles={[styles.avatarLarge, styles.mb3]}
-                                                imageStyles={[styles.avatarLarge]}
-                                                source={UserUtils.getAvatar(avatar, accountID)}
-                                                size={CONST.AVATAR_SIZE.LARGE}
-                                                fallbackIcon={fallbackIcon}
-                                            />
-                                        </OfflineWithFeedback>
-                                    </PressableWithoutFocus>
-                                )}
-                            </AttachmentModal>
+                                <OfflineWithFeedback pendingAction={lodashGet(details, 'pendingFields.avatar', null)}>
+                                    <Avatar
+                                        containerStyles={[styles.avatarLarge, styles.mb3]}
+                                        imageStyles={[styles.avatarLarge]}
+                                        source={UserUtils.getAvatar(avatar, accountID)}
+                                        size={CONST.AVATAR_SIZE.LARGE}
+                                        fallbackIcon={fallbackIcon}
+                                    />
+                                </OfflineWithFeedback>
+                            </PressableWithoutFocus>
                             {Boolean(displayName) && (
                                 <Text
                                     style={[styles.textHeadline, styles.mb6, styles.pre]}

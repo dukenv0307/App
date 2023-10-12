@@ -169,7 +169,10 @@ function ReportDetailsPage(props) {
                                     size={CONST.AVATAR_SIZE.LARGE}
                                 />
                             ) : (
-                                <RoomHeaderAvatars icons={icons} />
+                                <RoomHeaderAvatars
+                                    icons={icons}
+                                    policyID={props.report.policyID}
+                                />
                             )}
                         </View>
                         <View style={[styles.reportDetailsRoomInfo, styles.mw100]}>

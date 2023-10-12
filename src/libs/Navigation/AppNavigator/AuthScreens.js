@@ -318,6 +318,18 @@ class AuthScreens extends React.Component {
                         listeners={modalScreenListeners}
                     />
                     <RootStack.Screen
+                        name={SCREENS.WORKSPACE_ATTACHMENTS}
+                        options={{
+                            headerShown: false,
+                            presentation: 'transparentModal',
+                        }}
+                        getComponent={() => {
+                            const WorkspaceAttachment = require('../../../pages/workspace/WorkspaceAttachment').default;
+                            return WorkspaceAttachment;
+                        }}
+                        listeners={modalScreenListeners}
+                    />
+                    <RootStack.Screen
                         name={SCREENS.NOT_FOUND}
                         options={screenOptions.fullScreen}
                         component={NotFoundPage}

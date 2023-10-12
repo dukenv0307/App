@@ -101,6 +101,7 @@ function WorkspaceSettingsPage(props) {
                 >
                     <AvatarWithImagePicker
                         isUploading={props.policy.isAvatarUploading}
+                        onViewPhotoPress={() => Navigation.navigate(ROUTES.WORKSPACE_AVATAR.getRoute(props.policy.id))}
                         source={lodashGet(props.policy, 'avatar')}
                         size={CONST.AVATAR_SIZE.LARGE}
                         DefaultAvatar={() => (

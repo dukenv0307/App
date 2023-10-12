@@ -8,6 +8,7 @@ export default {
     REPORT: 'Report',
     REPORT_ATTACHMENTS: 'ReportAttachments',
     PROFILE_ATTACHMENTS: 'ProfileAttachment',
+    WORKSPACE_ATTACHMENTS: 'WorkspaceAttachment',
     NOT_FOUND: 'not-found',
     TRANSITION_BETWEEN_APPS: 'TransitionBetweenApps',
     VALIDATE_LOGIN: 'ValidateLogin',

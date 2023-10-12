@@ -26,8 +26,6 @@ import DotIndicatorMessage from './DotIndicatorMessage';
 import * as Browser from '../libs/Browser';
 import withNavigationFocus, {withNavigationFocusPropTypes} from './withNavigationFocus';
 import compose from '../libs/compose';
-import ROUTES from '../ROUTES';
-import Navigation from '../libs/Navigation/Navigation';
 
 const propTypes = {
     /** Avatar source to display */
@@ -93,6 +91,8 @@ const propTypes = {
     /** File name of the avatar */
     originalFileName: PropTypes.string,
 
+    onViewPhotoPress: PropTypes.func,
+
     ...withLocalizePropTypes,
     ...withNavigationFocusPropTypes,
 };
@@ -116,6 +116,7 @@ const defaultProps = {
     headerTitle: '',
     previewSource: '',
     originalFileName: '',
+    onViewPhotoPress: undefined,
 };
 
 class AvatarWithImagePicker extends React.Component {
@@ -300,7 +301,7 @@ class AvatarWithImagePicker extends React.Component {
                         originalFileName={this.props.originalFileName}
                         fallbackSource={this.props.fallbackIcon}
                     >
-                        {() => (
+                        {(show) => (
                             <AttachmentPicker type={CONST.ATTACHMENT_PICKER_TYPE.IMAGE}>
                                 {({openPicker}) => {
                                     const menuItems = [
@@ -333,8 +334,11 @@ class AvatarWithImagePicker extends React.Component {
                                             icon: Expensicons.Eye,
                                             text: this.props.translate('avatarWithImagePicker.viewPhoto'),
                                             onSelected: () => {
-                                                const route = ROUTES.SETTINGS_PROFILE_PHOTO.getRoute(this.props.source);
-                                                Navigation.navigate(route);
+                                                if (typeof this.props.onViewPhotoPress !== 'function') {
+                                                    show();
+                                                    return;
+                                                }
+                                                this.props.onViewPhotoPress();
                                             },
                                         });
                                     }
