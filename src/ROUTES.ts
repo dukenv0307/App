@@ -111,7 +111,6 @@ export default {
     SETTINGS_2FA: 'settings/security/two-factor-auth',
     SETTINGS_STATUS: 'settings/profile/status',
     SETTINGS_STATUS_SET: 'settings/profile/status/set',
-<<<<<<< HEAD
     PROFILE_AVATAR: {
         route: 'profile/:accountID/avatar',
         getRoute: (accountID: string) => `profile/${accountID}/avatar`,
@@ -120,11 +119,9 @@ export default {
         route: 'workspace/:policyID/avatar',
         getRoute: (policyID: string) => `workspace/${policyID}/avatar`,
     },
-=======
 
     KEYBOARD_SHORTCUTS: 'keyboard-shortcuts',
 
->>>>>>> main
     NEW: 'new',
     NEW_CHAT: 'new/chat',
     NEW_ROOM: 'new/room',
