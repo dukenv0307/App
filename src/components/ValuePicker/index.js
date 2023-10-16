@@ -78,7 +78,7 @@ function ValuePicker({value, label, items, placeholder, errorText, onInputChange
             </View>
             <ValueSelectorModal
                 isVisible={isPickerVisible}
-                currentValue={selectedLabel || placeholder || ''}
+                currentValue={value}
                 label={label}
                 selectedItem={selectedItem}
                 items={items}
