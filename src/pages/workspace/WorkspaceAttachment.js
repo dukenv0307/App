@@ -36,11 +36,14 @@ const propTypes = {
 
         /** The URL for the policy avatar */
         avatar: PropTypes.string,
+
+        /** File name of the avatar */
+        originalFileName: PropTypes.string,
     }).isRequired,
     ...withLocalizePropTypes,
 };
 
-function ProfileAttachment(props) {
+function WorkspaceAttachment(props) {
     return (
         <AttachmentModal
             headerTitle={lodashGet(props.policy, 'name', '')}
@@ -49,12 +52,14 @@ function ProfileAttachment(props) {
             onModalClose={() => {
                 Navigation.goBack();
             }}
+            isWorkspaceAvatar
+            originalFileName={lodashGet(props.policy, 'name', '')}
         />
     );
 }
 
-ProfileAttachment.propTypes = propTypes;
-ProfileAttachment.displayName = 'ProfileAttachment';
+WorkspaceAttachment.propTypes = propTypes;
+WorkspaceAttachment.displayName = 'WorkspaceAttachment';
 
 export default compose(
     withLocalize,
@@ -63,4 +68,4 @@ export default compose(
             key: (props) => `${ONYXKEYS.COLLECTION.POLICY}${getPolicyIDFromRoute(props.route)}`,
         },
     }),
-)(ProfileAttachment);
+)(WorkspaceAttachment);
