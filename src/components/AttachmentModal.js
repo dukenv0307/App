@@ -346,7 +346,9 @@ function AttachmentModal(props) {
         if (typeof props.onModalClose === 'function') {
             props.onModalClose();
         }
-    }, [props]);
+    
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.onModalClose]);
 
     /**
      *  open the modal
