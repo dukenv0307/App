@@ -1,9 +1,9 @@
-import {Keyboard, View, PanResponder} from 'react-native';
+import {Keyboard, View, PanResponder, InteractionManager} from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import _ from 'underscore';
 import lodashGet from 'lodash/get';
 import {PickerAvoidingView} from 'react-native-picker-select';
-import {useNavigation} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 import KeyboardAvoidingView from '../KeyboardAvoidingView';
 import CONST from '../../CONST';
 import styles from '../../styles/styles';
@@ -19,6 +19,7 @@ import useWindowDimensions from '../../hooks/useWindowDimensions';
 import useKeyboardState from '../../hooks/useKeyboardState';
 import useEnvironment from '../../hooks/useEnvironment';
 import useNetwork from '../../hooks/useNetwork';
+import usePrevious from '../../hooks/usePrevious';
 
 function ScreenWrapper({
     shouldEnableMaxHeight,
@@ -44,6 +45,21 @@ function ScreenWrapper({
     const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
     const maxHeight = shouldEnableMaxHeight ? windowHeight : undefined;
     const isKeyboardShown = lodashGet(keyboardState, 'isKeyboardShown', false);
+    const isFocused = useIsFocused();
+    const prevIsFocused = usePrevious(isFocused);
+    const [isSafeToAvoidingKeyboard, setIsSafeToAvoidingKeyboard] = useState(isFocused);
+
+    useEffect(() => {
+        if (prevIsFocused === isFocused) {
+            return;
+        }
+
+        InteractionManager.runAfterInteractions(() => {
+            setIsSafeToAvoidingKeyboard(isFocused);
+        })
+    }, [prevIsFocused, isFocused])
+
+
 
     const panResponder = useRef(
         PanResponder.create({
@@ -127,7 +143,7 @@ function ScreenWrapper({
                             <KeyboardAvoidingView
                                 style={[styles.w100, styles.h100, {maxHeight}]}
                                 behavior={keyboardAvoidingViewBehavior}
-                                enabled={shouldEnableKeyboardAvoidingView}
+                                enabled={shouldEnableKeyboardAvoidingView && isSafeToAvoidingKeyboard}
                             >
                                 <PickerAvoidingView
                                     style={styles.flex1}
