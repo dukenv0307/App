@@ -1095,16 +1095,20 @@ function deleteReportComment(reportID, reportAction) {
         lastVisibleActionCreated: '',
     };
     const {lastMessageText = '', lastMessageTranslationKey = ''} = ReportUtils.getLastVisibleMessage(originalReportID, optimisticReportActions);
+    const lastVisibleAction = ReportActionsUtils.getLastVisibleAction(originalReportID, optimisticReportActions);
+
     if (lastMessageText || lastMessageTranslationKey) {
-        const lastVisibleAction = ReportActionsUtils.getLastVisibleAction(originalReportID, optimisticReportActions);
-        const lastVisibleActionCreated = lodashGet(lastVisibleAction, 'created');
         const lastActorAccountID = lodashGet(lastVisibleAction, 'actorAccountID');
         optimisticReport = {
             lastMessageTranslationKey,
             lastMessageText,
-            lastVisibleActionCreated,
+            lastVisibleActionCreated: '',
             lastActorAccountID,
         };
+    }
+    
+    if (lastMessageText || lastMessageTranslationKey || ReportActionsUtils.isCreatedAction(lastVisibleAction)) {
+        optimisticReport.lastVisibleActionCreated = lodashGet(lastVisibleAction, 'created');
     }
 
     // If the API call fails we must show the original message again, so we revert the message content back to how it was
