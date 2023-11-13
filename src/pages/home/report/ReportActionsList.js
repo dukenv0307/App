@@ -1,5 +1,6 @@
 import {useRoute} from '@react-navigation/native';
 import lodashGet from 'lodash/get';
+import cloneDeep from 'lodash/cloneDeep';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
@@ -117,7 +118,7 @@ function ReportActionsList({
     isLoadingInitialReportActions,
     isLoadingOlderReportActions,
     isLoadingNewerReportActions,
-    sortedReportActions,
+    sortedReportActions: rawSortedReportActions,
     windowHeight,
     onScroll,
     mostRecentIOUReportActionID,
@@ -130,6 +131,7 @@ function ReportActionsList({
     onLayout,
     isComposerFullSize,
 }) {
+    const sortedReportActions = cloneDeep(rawSortedReportActions);
     const reportScrollManager = useReportScrollManager();
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
@@ -151,6 +153,8 @@ function ReportActionsList({
     const animatedStyles = useAnimatedStyle(() => ({
         opacity: opacity.value,
     }));
+
+    console.log('sortedReportActions', sortedReportActions)
 
     useEffect(() => {
         opacity.value = withTiming(1, {duration: 100});
@@ -383,6 +387,28 @@ function ReportActionsList({
         );
     }, [isLoadingInitialReportActions, isLoadingOlderReportActions, lastReportAction.actionName, isOffline]);
 
+    const scrollToLinkedReportAction = () => {
+        if (!linkedReportActionID) {
+            return;
+        }
+
+        const linkedReportActionIndex = _.findIndex(sortedReportActions, (reportAction) => reportAction.reportActionID === linkedReportActionID);
+
+        InteractionManager.runAfterInteractions(() => {
+            reportScrollManager.scrollToIndex(linkedReportActionIndex + 1, false, {animated: false, viewOffset: -250});
+        })
+    }
+
+    const prevLinkedReportActionID = usePrevious(linkedReportActionID);
+
+    useEffect(() => {
+        if (prevLinkedReportActionID === linkedReportActionID) {
+            return;
+        }
+        scrollToLinkedReportAction();
+    }, [linkedReportActionID, sortedReportActions]);
+
+
     const onLayoutInner = useCallback(
         (event) => {
             onLayout(event);
@@ -403,6 +429,8 @@ function ReportActionsList({
             />
         );
     }, [isLoadingNewerReportActions, isOffline]);
+
+    
 
     return (
         <>
