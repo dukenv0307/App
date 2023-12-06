@@ -3855,6 +3855,14 @@ function getWhisperDisplayNames(participantAccountIDs?: number[]): string | unde
 }
 
 /**
+ * Checks if a parentReport is a workspace chat
+ */
+function isWorkspaceChatThread(report: OnyxEntry<Report>): boolean {
+    const parentReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.parentReportID}`] ?? null;
+    return isChatThread(report) && !!getChatType(parentReport);
+}
+
+/**
  * Show subscript on workspace chats / threads and expense requests
  */
 function shouldReportShowSubscript(report: OnyxEntry<Report>): boolean {
@@ -3878,7 +3886,7 @@ function shouldReportShowSubscript(report: OnyxEntry<Report>): boolean {
         return true;
     }
 
-    if (isWorkspaceThread(report)) {
+    if (isWorkspaceChatThread(report)) {
         return true;
     }
 
