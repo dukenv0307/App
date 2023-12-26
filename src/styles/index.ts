@@ -262,6 +262,13 @@ const styles = (theme: ThemeColors) =>
             alignItems: 'center',
         },
 
+        autoCompleteOutsideContainer: {
+            left: -20,
+            right: -20,
+            position: 'absolute',
+            // backgroundColor: theme.white
+        },
+
         rtlTextRenderForSafari: {
             textAlign: 'left',
             ...writingDirection.ltr,

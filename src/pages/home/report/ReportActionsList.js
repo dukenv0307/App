@@ -466,6 +466,7 @@ function ReportActionsList({
                     onEndReachedThreshold={0.75}
                     onStartReached={loadNewerChats}
                     onStartReachedThreshold={0.75}
+                    overScrollMode={"never"}
                     ListFooterComponent={listFooterComponent}
                     ListHeaderComponent={listHeaderComponent}
                     keyboardShouldPersistTaps="handled"
