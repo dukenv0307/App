@@ -135,9 +135,9 @@ Onyx.connect({
  * @param {Boolean} isFromGlobalCreate
  * @param {String} [iouRequestType] one of manual/scan/distance
  */
-function startMoneyRequest_temporaryForRefactor(reportID, isFromGlobalCreate, iouRequestType = CONST.IOU.REQUEST_TYPE.MANUAL) {
+function startMoneyRequest_temporaryForRefactor(reportID, isFromGlobalCreate, iouRequestType = CONST.IOU.REQUEST_TYPE.MANUAL, existingTransactionID = undefined) {
     // Generate a brand new transactionID
-    const newTransactionID = CONST.IOU.OPTIMISTIC_TRANSACTION_ID;
+    const newTransactionID = existingTransactionID || CONST.IOU.OPTIMISTIC_TRANSACTION_ID;
     const created = currentDate || format(new Date(), 'yyyy-MM-dd');
     const comment = {};
 
@@ -161,6 +161,7 @@ function startMoneyRequest_temporaryForRefactor(reportID, isFromGlobalCreate, io
         transactionID: newTransactionID,
         isFromGlobalCreate,
         merchant: CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT,
+        isNewTransaction: true,
     });
 }
 
@@ -353,7 +354,7 @@ function buildOnyxDataForMoneyRequest(
         // Remove the temporary transaction used during the creation flow
         {
             onyxMethod: Onyx.METHOD.SET,
-            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`,
             value: null,
         },
     ];
@@ -497,7 +498,7 @@ function buildOnyxDataForMoneyRequest(
         // Remove the temporary transaction used during the creation flow
         {
             onyxMethod: Onyx.METHOD.SET,
-            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`,
             value: null,
         },
 
@@ -681,7 +682,7 @@ function getMoneyRequestInformation(
     // data. This is a big can of worms to change it to `Onyx.merge()` as explored in https://expensify.slack.com/archives/C05DWUDHVK7/p1692139468252109.
     // I want to clean this up at some point, but it's possible this will live in the code for a while so I've created https://github.com/Expensify/App/issues/25417
     // to remind me to do this.
-    const existingTransaction = allTransactionDrafts[`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`];
+    const existingTransaction = allTransactionDrafts[`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${existingTransactionID}`];
     if (existingTransaction && existingTransaction.iouRequestType === CONST.IOU.REQUEST_TYPE.DISTANCE) {
         optimisticTransaction = OnyxUtils.fastMerge(existingTransaction, optimisticTransaction);
     }
@@ -785,7 +786,7 @@ function getMoneyRequestInformation(
  * @param {Boolean} [billable]
  * @param {Obejct} validWaypoints
  */
-function createDistanceRequest(report, participant, comment, created, category, tag, amount, currency, merchant, billable, validWaypoints) {
+function createDistanceRequest(report, participant, comment, created, category, tag, amount, currency, merchant, billable, validWaypoints, existingTransactionID = undefined) {
     // If the report is an iou or expense report, we should get the linked chat report to be passed to the getMoneyRequestInformation function
     const isMoneyRequestReport = ReportUtils.isMoneyRequestReport(report);
     const currentChatReport = isMoneyRequestReport ? ReportUtils.getReport(report.chatReportID) : report;
@@ -1074,6 +1075,7 @@ function requestMoney(
     category = undefined,
     tag = undefined,
     billable = undefined,
+    existingTransactionID = undefined
 ) {
     // If the report is iou or expense report, we should get the linked chat report to be passed to the getMoneyRequestInformation function
     const isMoneyRequestReport = ReportUtils.isMoneyRequestReport(report);
@@ -1136,7 +1138,7 @@ function requestMoney(
  *
  * @return {Object}
  */
-function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag, existingSplitChatReportID = '') {
+function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag, existingSplitChatReportID = '', existingTransactionID = undefined) {
     const currentUserEmailForIOUSplit = OptionsListUtils.addSMSDomainIfPhoneNumber(currentUserLogin);
     const participantAccountIDs = _.map(participants, (participant) => Number(participant.accountID));
     const existingSplitChatReport =
@@ -1157,7 +1159,7 @@ function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAcco
         merchant || Localize.translateLocal('iou.request'),
         undefined,
         undefined,
-        undefined,
+        existingTransactionID,
         category,
         tag,
     );
@@ -1229,7 +1231,7 @@ function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAcco
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${splitTransaction.transactionID}`,
             value: null,
         },
     ];
@@ -1252,7 +1254,7 @@ function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAcco
         },
         {
             onyxMethod: Onyx.METHOD.MERGE,
-            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${CONST.IOU.OPTIMISTIC_TRANSACTION_ID}`,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${splitTransaction.transactionID}`,
             value: null,
         },
     ];
@@ -1479,7 +1481,7 @@ function createSplitsAndOnyxData(participants, currentUserLogin, currentUserAcco
  * @param {String} tag
  * @param {String} existingSplitChatReportID - Either a group DM or a workspace chat
  */
-function splitBill(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag, existingSplitChatReportID = '') {
+function splitBill(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag, existingSplitChatReportID = '', existingTransactionID = undefined) {
     const {splitData, splits, onyxData} = createSplitsAndOnyxData(
         participants,
         currentUserLogin,
@@ -1491,6 +1493,7 @@ function splitBill(participants, currentUserLogin, currentUserAccountID, amount,
         category,
         tag,
         existingSplitChatReportID,
+        existingTransactionID
     );
     API.write(
         'SplitBill',
@@ -1527,7 +1530,7 @@ function splitBill(participants, currentUserLogin, currentUserAccountID, amount,
  * @param {String} category
  * @param {String} tag
  */
-function splitBillAndOpenReport(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag) {
+function splitBillAndOpenReport(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag, existingTransactionID = undefined) {
     const {splitData, splits, onyxData} = createSplitsAndOnyxData(participants, currentUserLogin, currentUserAccountID, amount, comment, currency, merchant, category, tag);
 
     API.write(
@@ -1566,7 +1569,7 @@ function splitBillAndOpenReport(participants, currentUserLogin, currentUserAccou
  * @param {Object} receipt
  * @param {String} existingSplitChatReportID - Either a group DM or a workspace chat
  */
-function startSplitBill(participants, currentUserLogin, currentUserAccountID, comment, category, tag, receipt, existingSplitChatReportID = '') {
+function startSplitBill(participants, currentUserLogin, currentUserAccountID, comment, category, tag, receipt, existingSplitChatReportID = '', existingTransactionID = undefined) {
     const currentUserEmailForIOUSplit = OptionsListUtils.addSMSDomainIfPhoneNumber(currentUserLogin);
     const participantAccountIDs = _.map(participants, (participant) => Number(participant.accountID));
     const existingSplitChatReport =
@@ -1591,6 +1594,7 @@ function startSplitBill(participants, currentUserLogin, currentUserAccountID, co
         CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT,
         receiptObject,
         filename,
+        existingTransactionID
     );
 
     // Note: The created action must be optimistically generated before the IOU action so there's no chance that the created action appears after the IOU action in the chat

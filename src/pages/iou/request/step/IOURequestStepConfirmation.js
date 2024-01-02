@@ -160,6 +160,7 @@ function IOURequestStepConfirmation({
                 transaction.category,
                 transaction.tag,
                 transaction.billable,
+                transactionID
             );
         },
         [report, transaction, currentUserPersonalDetails.login, currentUserPersonalDetails.accountID],
@@ -183,6 +184,7 @@ function IOURequestStepConfirmation({
                 transaction.merchant,
                 transaction.billable,
                 TransactionUtils.getValidWaypoints(transaction.comment.waypoints, true),
+                transactionID
             );
         },
         [report, transaction],
@@ -204,6 +206,7 @@ function IOURequestStepConfirmation({
                     transaction.tag,
                     receiptFile,
                     existingSplitChatReportID,
+                    transactionID
                 );
                 return;
             }
@@ -222,6 +225,7 @@ function IOURequestStepConfirmation({
                     transaction.category,
                     transaction.tag,
                     report.reportID,
+                    transactionID
                 );
                 return;
             }
@@ -238,6 +242,7 @@ function IOURequestStepConfirmation({
                     transaction.merchant,
                     transaction.category,
                     transaction.tag,
+                    transactionID
                 );
                 return;
             }

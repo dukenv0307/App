@@ -147,7 +147,7 @@ function IOURequestStepScan({
                 };
 
                 // When an existing transaction is being edited (eg. not the create transaction flow)
-                if (transactionID !== CONST.IOU.OPTIMISTIC_TRANSACTION_ID) {
+                if (!transaction.isNewTransaction) {
                     FileUtils.readFileAsync(filePath, photo.path, onSuccess);
                     Navigation.dismissModal();
                     return;
@@ -253,7 +253,7 @@ function IOURequestStepScan({
                                         }
 
                                         // When a transaction is being edited (eg. not in the creation flow)
-                                        if (transactionID !== CONST.IOU.OPTIMISTIC_TRANSACTION_ID) {
+                                        if (!transaction.isNewTransaction) {
                                             IOU.replaceReceipt(transactionID, file, filePath);
                                             Navigation.dismissModal();
                                             return;

@@ -49,6 +49,7 @@ function IOURequestStepScan({
     route: {
         params: {iouType, reportID, transactionID, backTo},
     },
+    transaction
 }) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -126,7 +127,7 @@ function IOURequestStepScan({
         }
 
         // When an existing transaction is being edited (eg. not the create transaction flow)
-        if (transactionID !== CONST.IOU.OPTIMISTIC_TRANSACTION_ID) {
+        if (!transaction.isNewTransaction) {
             IOU.replaceReceipt(transactionID, file, fileSource);
             Navigation.dismissModal();
             return;
@@ -160,7 +161,7 @@ function IOURequestStepScan({
         }
 
         // When an existing transaction is being edited (eg. not the create transaction flow)
-        if (transactionID !== CONST.IOU.OPTIMISTIC_TRANSACTION_ID) {
+        if (!transaction.isNewTransaction) {
             IOU.replaceReceipt(transactionID, imageFile, fileSource);
             Navigation.dismissModal();
             return;
