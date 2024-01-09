@@ -9,13 +9,15 @@ import withWindowDimensions, {windowDimensionsPropTypes} from '@components/withW
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import compose from '@libs/compose';
-import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import reportPropTypes from '@pages/reportPropTypes';
 import * as Report from '@userActions/Report';
 import ONYXKEYS from '@src/ONYXKEYS';
 import AnimatedEmptyStateBackground from './AnimatedEmptyStateBackground';
 import ReportActionItem from './ReportActionItem';
 import reportActionPropTypes from './reportActionPropTypes';
+import { getAllParentReportActions } from '@libs/ReportUtils';
+import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
 
 const propTypes = {
     /** Flag to show, hide the thread divider line */
@@ -48,36 +50,35 @@ const defaultProps = {
 function ReportActionItemParentAction(props) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
-    const parentReportAction = props.parentReportActions[`${props.report.parentReportActionID}`];
 
-    // In case of transaction threads, we do not want to render the parent report action.
-    if (ReportActionsUtils.isTransactionThread(parentReportAction)) {
-        return null;
-    }
+    const allParents = getAllParentReportActions(props.report);
     return (
-        <OfflineWithFeedback
-            shouldDisableOpacity={Boolean(lodashGet(parentReportAction, 'pendingAction'))}
-            pendingAction={lodashGet(props.report, 'pendingFields.addWorkspaceRoom') || lodashGet(props.report, 'pendingFields.createChat')}
-            errors={lodashGet(props.report, 'errorFields.addWorkspaceRoom') || lodashGet(props.report, 'errorFields.createChat')}
-            errorRowStyles={[styles.ml10, styles.mr2]}
-            onClose={() => Report.navigateToConciergeChatAndDeleteReport(props.report.reportID)}
-        >
-            <View style={StyleUtils.getReportWelcomeContainerStyle(props.isSmallScreenWidth)}>
-                <AnimatedEmptyStateBackground />
-                <View style={[styles.p5, StyleUtils.getReportWelcomeTopMarginStyle(props.isSmallScreenWidth)]} />
-                {parentReportAction && (
-                    <ReportActionItem
-                        report={props.report}
-                        action={parentReportAction}
-                        displayAsGroup={false}
-                        isMostRecentIOUReportAction={false}
-                        shouldDisplayNewMarker={props.shouldDisplayNewMarker}
-                        index={0}
-                    />
-                )}
-            </View>
-            {!props.shouldHideThreadDividerLine && <View style={[styles.threadDividerLine]} />}
-        </OfflineWithFeedback>
+        <View style={StyleUtils.getReportWelcomeContainerStyle(props.isSmallScreenWidth)}>
+            <AnimatedEmptyStateBackground />
+            <View style={[styles.p5, StyleUtils.getReportWelcomeTopMarginStyle(props.isSmallScreenWidth)]} />
+            {allParents.reverse().map((parent, index) => {
+                return (
+                    <OfflineWithFeedback
+                        shouldDisableOpacity={Boolean(lodashGet(parent.reportAction, 'pendingAction'))}
+                        pendingAction={lodashGet(parent.report, 'pendingFields.addWorkspaceRoom') || lodashGet(parent.report, 'pendingFields.createChat')}
+                        errors={lodashGet(parent.report, 'errorFields.addWorkspaceRoom') || lodashGet(parent.report, 'errorFields.createChat')}
+                        errorRowStyles={[styles.ml10, styles.mr2]}
+                        onClose={() => Report.navigateToConciergeChatAndDeleteReport(parent.report.reportID)}
+                    >
+                        <ReportActionItem
+                            onPress={() => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(parent.report.reportID))}
+                            report={parent.report}
+                            action={parent.reportAction}
+                            displayAsGroup={false}
+                            isMostRecentIOUReportAction={false}
+                            shouldDisplayNewMarker={props.shouldDisplayNewMarker}
+                            index={index}
+                        />
+                        <View style={[styles.threadDividerLine]} />
+                    </OfflineWithFeedback>
+                )
+            })}
+        </View>
     );
 }
 
@@ -92,9 +93,9 @@ export default compose(
         report: {
             key: ({reportID}) => `${ONYXKEYS.COLLECTION.REPORT}${reportID}`,
         },
-        parentReportActions: {
-            key: ({parentReportID}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${parentReportID}`,
-            canEvict: false,
-        },
+        // We should subscribe all report actions here to dynamic update when any parent report action is changed
+        allReportActions: {
+            key: ONYXKEYS.COLLECTION.REPORT_ACTIONS
+        }
     }),
 )(ReportActionItemParentAction);

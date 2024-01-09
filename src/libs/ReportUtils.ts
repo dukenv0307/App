@@ -364,6 +364,11 @@ type OnyxDataTaskAssigneeChat = {
     optimisticChatCreatedReportAction?: OptimisticCreatedReportAction;
 };
 
+type Parent = {
+    report: Report,
+    reportAction: ReportAction
+}
+
 let currentUserEmail: string | undefined;
 let currentUserAccountID: number | undefined;
 let isAnonymousUser = false;
@@ -4355,6 +4360,28 @@ function shouldDisableThread(reportAction: ReportAction, reportID: string) {
     );
 }
 
+function getAllParentReportActions(report: Report): Parent[] {
+    let parentReportID = report.parentReportID;
+    let parentReportActionID = report.parentReportActionID;
+    let currentReport = report;
+    let allParents: Parent[] = [];
+    while (!!parentReportID) {
+        const parentReport = getReport(parentReportID);
+        const parentReportAction = ReportActionsUtils.getReportAction(parentReportID, parentReportActionID ?? '0');
+        if (!parentReportAction || ReportActionsUtils.isTransactionThread(parentReportAction) || !parentReport) {
+            break;
+        }
+        allParents.push({ report: currentReport, reportAction: parentReportAction});
+        parentReportID = parentReport?.parentReportID;
+        parentReportActionID = parentReport?.parentReportActionID;
+        if (!isEmptyObject(parentReport)) {
+            currentReport = parentReport;
+        }
+    } 
+
+    return allParents;
+}
+
 export {
     getReportParticipantsTitle,
     isReportMessageAttachment,
@@ -4532,6 +4559,7 @@ export {
     shouldAutoFocusOnKeyPress,
     shouldDisplayThreadReplies,
     shouldDisableThread,
+    getAllParentReportActions,
 };
 
 export type {ExpenseOriginalMessage, OptionData, OptimisticChatReport};
