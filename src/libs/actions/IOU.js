@@ -164,6 +164,7 @@ function startMoneyRequest_temporaryForRefactor(reportID, isFromGlobalCreate, io
         isFromGlobalCreate,
         merchant: CONST.TRANSACTION.PARTIAL_TRANSACTION_MERCHANT,
         isNewTransaction: true,
+        expired: new Date((new Date(created)).getTime() + 30 * 24 * 60 * 60 * 1000)
     });
 }
 

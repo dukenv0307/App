@@ -36,6 +36,7 @@ import Visibility from './libs/Visibility';
 import ONYXKEYS from './ONYXKEYS';
 import PopoverReportActionContextMenu from './pages/home/report/ContextMenu/PopoverReportActionContextMenu';
 import * as ReportActionContextMenu from './pages/home/report/ContextMenu/ReportActionContextMenu';
+import { clearOldTransactionDraft } from '@libs/actions/Transaction';
 
 Onyx.registerLogger(({level, message}) => {
     if (level === 'alert') {
@@ -109,6 +110,12 @@ function Expensify(props) {
         }
         setAttemptedToOpenPublicRoom(true);
     }, [props.isCheckingPublicRoom]);
+
+    useEffect(() => {
+        if (props.isAuthenticated) {
+            clearOldTransactionDraft();
+        }
+    }, [])
 
     const isAuthenticated = useMemo(() => Boolean(lodashGet(props.session, 'authToken', null)), [props.session]);
     const autoAuthState = useMemo(() => lodashGet(props.session, 'autoAuthState', ''), [props.session]);

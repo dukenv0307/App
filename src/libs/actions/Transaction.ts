@@ -1,7 +1,7 @@
 import {isEqual} from 'lodash';
 import lodashClone from 'lodash/clone';
 import lodashHas from 'lodash/has';
-import Onyx from 'react-native-onyx';
+import Onyx, { OnyxEntry } from 'react-native-onyx';
 import * as API from '@libs/API';
 import * as CollectionUtils from '@libs/CollectionUtils';
 import * as TransactionUtils from '@libs/TransactionUtils';
@@ -10,6 +10,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {RecentWaypoint, Transaction} from '@src/types/onyx';
 import type {OnyxData} from '@src/types/onyx/Request';
 import type {WaypointCollection} from '@src/types/onyx/Transaction';
+import {format} from 'date-fns';
 
 let recentWaypoints: RecentWaypoint[] = [];
 Onyx.connect({
@@ -26,6 +27,18 @@ Onyx.connect({
         }
         const transactionID = CollectionUtils.extractCollectionItemID(key);
         allTransactions[transactionID] = transaction;
+    },
+});
+
+const allTransactionDrafts: Record<string, Transaction> = {};
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.TRANSACTION_DRAFT,
+    callback: (transaction, key) => {
+        if (!key || !transaction) {
+            return;
+        }
+        const transactionID = CollectionUtils.extractCollectionItemID(key);
+        allTransactionDrafts[transactionID] = transaction;
     },
 });
 
@@ -264,4 +277,16 @@ function updateWaypoints(transactionID: string, waypoints: WaypointCollection, i
     });
 }
 
-export {addStop, createInitialWaypoints, saveWaypoint, removeWaypoint, getRoute, getRouteForDraft, updateWaypoints};
+function clearOldTransactionDraft() {
+    const currentDate = format(new Date(), 'yyyy-MM-dd')
+    const allTransactionDraftExpireds = Object.values(allTransactionDrafts).filter((draft) => (draft?.expired ?? '') < currentDate).map((draft) => draft.transactionID)
+
+    let allTransactionDraftToMerge: Record<string, null> = {}
+    allTransactionDraftExpireds.map((transactionID) => {
+        allTransactionDraftToMerge[transactionID] = null;
+    })
+
+    Onyx.merge(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, allTransactionDraftToMerge)
+}
+
+export {addStop, createInitialWaypoints, saveWaypoint, removeWaypoint, getRoute, getRouteForDraft, updateWaypoints, clearOldTransactionDraft};
