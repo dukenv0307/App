@@ -11,6 +11,8 @@ function canUseChronos(betas: OnyxEntry<Beta[]>): boolean {
 }
 
 function canUseDefaultRooms(betas: OnyxEntry<Beta[]>): boolean {
+
+    
     return !!betas?.includes(CONST.BETAS.DEFAULT_ROOMS) || canUseAllBetas(betas);
 }
 
