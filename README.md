@@ -83,6 +83,7 @@ If you want to run the app on an actual physical iOS device, please follow the i
 * To run the **Development app**, run: `npm run desktop`, this will start a new Electron process running on your MacOS desktop in the `dist/Mac` folder.
 
 ## Troubleshooting
+
 1. If you are having issues with **_Getting Started_**, please reference [React Native's Documentation](https://reactnative.dev/docs/environment-setup)
 2. If you are running into CORS errors like (in the browser dev console)
    ```sh
