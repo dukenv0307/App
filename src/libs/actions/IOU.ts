@@ -2908,10 +2908,12 @@ function deleteMoneyRequest(transactionID: string, reportAction: OnyxTypes.Repor
         transactionThread = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadID}`] ?? null;
     }
 
+    const transactionThreadReportActions = ReportActionsUtils.getAllReportActions(transactionThreadID);
+    const reportActionsFromExpensifyNotification = Object.values(transactionThreadReportActions).filter(action => action.actorAccountID === CONST.ACCOUNT_ID.NOTIFICATIONS);
     // STEP 2: Decide if we need to:
     // 1. Delete the transactionThread - delete if there are no visible comments in the thread
     // 2. Update the moneyRequestPreview to show [Deleted request] - update if the transactionThread exists AND it isn't being deleted
-    const shouldDeleteTransactionThread = transactionThreadID ? (reportAction?.childVisibleActionCount ?? 0) === 0 : false;
+    const shouldDeleteTransactionThread = transactionThreadID ? (reportAction?.childVisibleActionCount ?? 0) === 0 || reportAction?.childVisibleActionCount === reportActionsFromExpensifyNotification.length : false;
     const shouldShowDeletedRequestMessage = !!transactionThreadID && !shouldDeleteTransactionThread;
 
     // STEP 3: Update the IOU reportAction and decide if the iouReport should be deleted. We delete the iouReport if there are no visible comments left in the report.
