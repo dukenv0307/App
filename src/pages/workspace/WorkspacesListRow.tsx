@@ -15,6 +15,7 @@ import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalD
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import type {AvatarSource} from '@libs/UserUtils';
 import type {AnchorPosition} from '@styles/index';
@@ -108,6 +109,7 @@ function WorkspacesListRow({
     const {translate} = useLocalize();
     const [threeDotsMenuPosition, setThreeDotsMenuPosition] = useState<AnchorPosition>({horizontal: 0, vertical: 0});
     const threeDotsMenuContainerRef = useRef<View>(null);
+    const {isSmallScreenWidth} = useWindowDimensions();
 
     const ownerDetails = ownerAccountID && PersonalDetailsUtils.getPersonalDetailsByIDs([ownerAccountID], currentUserPersonalDetails.accountID)[0];
 
@@ -156,11 +158,28 @@ function WorkspacesListRow({
                     (!isJoinRequestPending ? (
                         <>
                             <BrickRoadIndicatorIcon brickRoadIndicator={brickRoadIndicator} />
-                            <ThreeDotsMenu
-                                menuItems={menuItems}
-                                anchorPosition={{horizontal: 0, vertical: 0}}
-                                disabled={shouldDisableThreeDotsMenu}
-                            />
+                            <View ref={threeDotsMenuContainerRef}>
+                                <ThreeDotsMenu
+                                    onIconPress={() => {
+                                        if (isSmallScreenWidth) {
+                                            setThreeDotsMenuPosition({
+                                                horizontal: 0,
+                                                vertical: 0,
+                                            });
+                                            return;
+                                        }
+                                        threeDotsMenuContainerRef.current?.measureInWindow((x, y, width, height) => {
+                                            setThreeDotsMenuPosition({
+                                                horizontal: x + width,
+                                                vertical: y + height,
+                                            });
+                                        });
+                                    }}
+                                    menuItems={menuItems}
+                                    anchorPosition={threeDotsMenuPosition}
+                                    disabled={shouldDisableThreeDotsMenu}
+                                />
+                            </View>
                         </>
                     ) : (
                         <Badge
