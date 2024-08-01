@@ -94,7 +94,7 @@ function Tooltip({children, shouldHandleScroll = false, ...props}: TooltipProps,
 
     return (
         // eslint-disable-next-line react/jsx-props-no-spreading
-        <GenericTooltip {...props}>
+        <GenericTooltip {...props} shouldDisableOverlay>
             {({isVisible, showTooltip, hideTooltip, updateTargetBounds}) =>
                 // Checks if valid element so we can wrap the BoundsObserver around it
                 // If not, we just return the primitive children

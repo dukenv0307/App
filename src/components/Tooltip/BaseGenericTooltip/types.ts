@@ -33,6 +33,9 @@ type BaseGenericTooltipProps = {
 
     /** Is tooltip visible */
     isVisible: boolean;
+
+    /** Whether to disable transparent overlay */
+    shouldDisableOverlay?: boolean
 } & Pick<SharedTooltipProps, 'renderTooltipContent' | 'maxWidth' | 'numberOfLines' | 'text' | 'shouldForceRenderingBelow' | 'wrapperStyle' | 'anchorAlignment'>;
 
 // eslint-disable-next-line import/prefer-default-export

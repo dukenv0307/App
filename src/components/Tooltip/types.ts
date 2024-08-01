@@ -57,6 +57,9 @@ type GenericTooltipProps = SharedTooltipProps & {
 
     /** Whether to ignore TooltipSense activity and always triger animation */
     shouldForceAnimate?: boolean;
+
+    /** Whether to disable transparent overlay */
+    shouldDisableOverlay?: boolean
 };
 
 type TooltipProps = ChildrenProps &

@@ -34,6 +34,7 @@ function GenericTooltip({
         vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.BOTTOM,
     },
     shouldForceAnimate = false,
+    shouldDisableOverlay = false
 }: GenericTooltipProps) {
     const {preferredLocale} = useLocalize();
     const {windowWidth} = useWindowDimensions();
@@ -170,6 +171,7 @@ function GenericTooltip({
                     anchorAlignment={anchorAlignment}
                     hideTooltip={hideTooltip}
                     isVisible={isVisible}
+                    shouldDisableOverlay={shouldDisableOverlay}
                 />
             )}
 

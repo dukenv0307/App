@@ -34,7 +34,8 @@ function BaseGenericTooltip({
         vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.BOTTOM,
     },
     hideTooltip,
-    isVisible
+    isVisible,
+    shouldDisableOverlay
 }: BaseGenericTooltipProps) {
     // The width of tooltip's inner content. Has to be undefined in the beginning
     // as a width of 0 will cause the content to be rendered of a width of 0,
@@ -119,7 +120,7 @@ function BaseGenericTooltip({
 
     return ReactDOM.createPortal(
         <>
-        <TransparentOverlay resetSuggestions={hideTooltip} />
+        {!shouldDisableOverlay && <TransparentOverlay resetSuggestions={hideTooltip} />}
         <Animated.View
             ref={viewRef(rootWrapper)}
             style={[rootWrapperStyle, animationStyle]}
