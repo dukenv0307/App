@@ -8,6 +8,7 @@ import CONST from '@src/CONST';
 import type {BaseGenericTooltipProps} from './types';
 import { Portal } from '@gorhom/portal';
 import TransparentOverlay from '@components/AutoCompleteSuggestions/AutoCompleteSuggestionsPortal/TransparentOverlay/TransparentOverlay';
+import { GUTTER_WIDTH } from '@styles/utils/generators/TooltipStyleUtils/computeHorizontalShift';
 
 // Props will change frequently.
 // On every tooltip hover, we update the position in state which will result in re-rendering.
@@ -54,7 +55,9 @@ function BaseGenericTooltip({
                 currentSize: animation,
                 windowWidth,
                 xOffset:xOffset-windowWidth,
-                yOffset: yOffset-targetHeight - 12,
+                // on native we need the yOffset is calculated from bottom edge of element to the top of screen so we need
+                // to minus targetHeight and GUTTER_WIDTH to be consistent with other platform
+                yOffset: yOffset-targetHeight - GUTTER_WIDTH,
                 tooltipTargetWidth: targetWidth,
                 tooltipTargetHeight: targetHeight,
                 maxWidth,
