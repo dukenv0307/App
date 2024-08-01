@@ -35,6 +35,7 @@ function BaseEducationalTooltip({children, ...props}: TooltipProps) {
                 hideTooltipRef.current = hideTooltip;
                 return React.cloneElement(children as React.ReactElement, {
                     onLayout: (e: LayoutChangeEvent) => {
+                        // on native we can use e.target, but on web it's undefined so we need to use e.nativeEvent.target
                         const target = e.target || e.nativeEvent.target
                         target?.measure((fx, fy, width, height, px, py)=>{
                             updateTargetBounds({
