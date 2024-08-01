@@ -22,17 +22,7 @@ function BaseEducationalTooltip({children, ...props}: TooltipProps) {
         [],
     );
 
-    // Automatically hide tooltip after 5 seconds
-    useEffect(() => {
-        if (!hideTooltipRef.current) {
-            return;
-        }
-
-        const intervalID = setInterval(hideTooltipRef.current, 5000);
-        return () => {
-            clearInterval(intervalID);
-        };
-    }, []);
+    const abc = useRef(null);
 
     return (
         <GenericTooltip
@@ -45,9 +35,19 @@ function BaseEducationalTooltip({children, ...props}: TooltipProps) {
                 hideTooltipRef.current = hideTooltip;
                 return React.cloneElement(children as React.ReactElement, {
                     onLayout: (e: LayoutChangeEvent) => {
-                        updateTargetBounds(getBounds(e));
+                        const target = e.target || e.nativeEvent.target
+                        target?.measure((fx, fy, width, height, px, py)=>{
+                            updateTargetBounds({
+                                height,
+                                width,
+                                x: px,
+                                y:py
+                            });
+                        })
+                        
                         showTooltip();
                     },
+                    ref: abc
                 });
             }}
         </GenericTooltip>

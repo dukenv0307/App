@@ -6,6 +6,8 @@ import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
 import CONST from '@src/CONST';
 import type {BaseGenericTooltipProps} from './types';
+import { Portal } from '@gorhom/portal';
+import TransparentOverlay from '@components/AutoCompleteSuggestions/AutoCompleteSuggestionsPortal/TransparentOverlay/TransparentOverlay';
 
 // Props will change frequently.
 // On every tooltip hover, we update the position in state which will result in re-rendering.
@@ -31,6 +33,8 @@ function BaseGenericTooltip({
         vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.BOTTOM,
     },
     wrapperStyle = {},
+    hideTooltip,
+    isVisible
 }: BaseGenericTooltipProps) {
     // The width of tooltip's inner content. Has to be undefined in the beginning
     // as a width of 0 will cause the content to be rendered of a width of 0,
@@ -39,20 +43,9 @@ function BaseGenericTooltip({
 
     // The height of tooltip's wrapper.
     const [wrapperMeasuredHeight, setWrapperMeasuredHeight] = useState<number>();
-    const textContentRef = useRef<RNText>(null);
-    const viewContentRef = useRef<RNView>(null);
     const rootWrapper = useRef<RNView>(null);
 
     const StyleUtils = useStyleUtils();
-
-    // Measure content width
-    useEffect(() => {
-        if (!textContentRef.current && !viewContentRef.current) {
-            return;
-        }
-        const contentRef = viewContentRef.current ?? textContentRef.current;
-        contentRef?.measure((x, y, width) => setContentMeasuredWidth(width));
-    }, []);
 
     const {animationStyle, rootWrapperStyle, textStyle, pointerWrapperStyle, pointerStyle} = useMemo(
         () =>
@@ -60,8 +53,8 @@ function BaseGenericTooltip({
                 tooltip: rootWrapper.current,
                 currentSize: animation,
                 windowWidth,
-                xOffset,
-                yOffset,
+                xOffset:xOffset-windowWidth,
+                yOffset: yOffset-targetHeight - 12,
                 tooltipTargetWidth: targetWidth,
                 tooltipTargetHeight: targetHeight,
                 maxWidth,
@@ -94,7 +87,7 @@ function BaseGenericTooltip({
 
     let content;
     if (renderTooltipContent) {
-        content = <View ref={viewContentRef}>{renderTooltipContent()}</View>;
+        content = <View>{renderTooltipContent()}</View>;
     } else {
         content = (
             <Text
@@ -103,7 +96,6 @@ function BaseGenericTooltip({
             >
                 <Text
                     style={textStyle}
-                    ref={textContentRef}
                 >
                     {text}
                 </Text>
@@ -111,8 +103,14 @@ function BaseGenericTooltip({
         );
     }
 
-    return (
-        <Animated.View
+
+    if(!isVisible){
+        return null
+    };
+
+    return  <Portal hostName="suggestions">
+    <TransparentOverlay resetSuggestions={hideTooltip} />
+    <Animated.View
             ref={rootWrapper}
             style={[rootWrapperStyle, animationStyle]}
             onLayout={(e) => {
@@ -121,6 +119,9 @@ function BaseGenericTooltip({
                     return;
                 }
                 setWrapperMeasuredHeight(height);
+                e.target.measure((x, y, width) => {
+                    setContentMeasuredWidth(width)
+                })
             }}
         >
             {content}
@@ -128,7 +129,7 @@ function BaseGenericTooltip({
                 <View style={pointerStyle} />
             </View>
         </Animated.View>
-    );
+</Portal>
 }
 
 BaseGenericTooltip.displayName = 'BaseGenericTooltip';

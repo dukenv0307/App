@@ -27,6 +27,12 @@ type BaseGenericTooltipProps = {
     /** Any additional amount to manually adjust the vertical position of the tooltip.
     A positive value shifts the tooltip down, and a negative value shifts it up. */
     shiftVertical?: number;
+
+    /** Hide tooltip */
+    hideTooltip: () => void;
+
+    /** Is tooltip visible */
+    isVisible: boolean;
 } & Pick<SharedTooltipProps, 'renderTooltipContent' | 'maxWidth' | 'numberOfLines' | 'text' | 'shouldForceRenderingBelow' | 'wrapperStyle' | 'anchorAlignment'>;
 
 // eslint-disable-next-line import/prefer-default-export

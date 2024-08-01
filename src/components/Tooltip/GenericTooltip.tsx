@@ -168,6 +168,8 @@ function GenericTooltip({
                     shouldForceRenderingBelow={shouldForceRenderingBelow}
                     wrapperStyle={wrapperStyle}
                     anchorAlignment={anchorAlignment}
+                    hideTooltip={hideTooltip}
+                    isVisible={isVisible}
                 />
             )}
 

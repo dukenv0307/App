@@ -7,6 +7,7 @@ import CONST from '@src/CONST';
 import textRef from '@src/types/utils/textRef';
 import viewRef from '@src/types/utils/viewRef';
 import type {BaseGenericTooltipProps} from './types';
+import TransparentOverlay from '@components/AutoCompleteSuggestions/AutoCompleteSuggestionsPortal/TransparentOverlay/TransparentOverlay';
 
 // Props will change frequently.
 // On every tooltip hover, we update the position in state which will result in re-rendering.
@@ -32,6 +33,8 @@ function BaseGenericTooltip({
         horizontal: CONST.MODAL.ANCHOR_ORIGIN_HORIZONTAL.CENTER,
         vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.BOTTOM,
     },
+    hideTooltip,
+    isVisible
 }: BaseGenericTooltipProps) {
     // The width of tooltip's inner content. Has to be undefined in the beginning
     // as a width of 0 will cause the content to be rendered of a width of 0,
@@ -110,11 +113,13 @@ function BaseGenericTooltip({
 
     const body = document.querySelector('body');
 
-    if (!body) {
+    if (!body || !isVisible) {
         return null;
     }
 
     return ReactDOM.createPortal(
+        <>
+        <TransparentOverlay resetSuggestions={hideTooltip} />
         <Animated.View
             ref={viewRef(rootWrapper)}
             style={[rootWrapperStyle, animationStyle]}
@@ -123,7 +128,8 @@ function BaseGenericTooltip({
             <View style={pointerWrapperStyle}>
                 <View style={pointerStyle} />
             </View>
-        </Animated.View>,
+        </Animated.View>
+        </>,
         body,
     );
 }
