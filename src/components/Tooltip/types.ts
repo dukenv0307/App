@@ -41,7 +41,7 @@ type SharedTooltipProps = {
     shouldUseOverlay?: boolean;
 
     /** Callback to fire when the transparent overlay is pressed */
-    onPressOverlay?: () => void;
+    onHideTooltip?: () => void;
 };
 
 type GenericTooltipState = {

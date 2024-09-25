@@ -29,7 +29,7 @@ type BaseGenericTooltipProps = {
     shiftVertical?: number;
 } & Pick<
     SharedTooltipProps,
-    'renderTooltipContent' | 'maxWidth' | 'numberOfLines' | 'text' | 'shouldForceRenderingBelow' | 'wrapperStyle' | 'anchorAlignment' | 'shouldUseOverlay' | 'onPressOverlay'
+    'renderTooltipContent' | 'maxWidth' | 'numberOfLines' | 'text' | 'shouldForceRenderingBelow' | 'wrapperStyle' | 'anchorAlignment' | 'shouldUseOverlay' | 'onHideTooltip'
 >;
 
 // eslint-disable-next-line import/prefer-default-export

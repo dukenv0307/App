@@ -67,7 +67,7 @@ function BaseEducationalTooltip({children, shouldAutoDismiss = false, onHideTool
     return (
         <GenericTooltip
             shouldForceAnimate
-            onPressOverlay={onHideTooltip}
+            onHideTooltip={onHideTooltip}
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...props}
         >
