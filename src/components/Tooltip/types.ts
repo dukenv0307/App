@@ -78,6 +78,8 @@ type EducationalTooltipProps = ChildrenProps &
 
         /** Whether the actual Tooltip should be rendered. If false, it's just going to return the children */
         shouldRender?: boolean;
+
+        onHideTooltip?: ()=> void;
     };
 
 type TooltipExtendedProps = (EducationalTooltipProps | TooltipProps) & {

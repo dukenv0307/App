@@ -330,6 +330,8 @@ type MenuItemBaseProps = {
 
     /** Should selected item be marked with checkmark */
     shouldShowSelectedItemCheck?: boolean;
+
+    onHideTooltip?: () => void
 };
 
 type MenuItemProps = (IconProps | AvatarProps | NoIcon) & MenuItemBaseProps;
@@ -428,6 +430,7 @@ function MenuItem(
         tooltipShiftVertical = 0,
         renderTooltipContent,
         shouldShowSelectedItemCheck = false,
+        onHideTooltip
     }: MenuItemProps,
     ref: PressableRef,
 ) {
@@ -559,6 +562,7 @@ function MenuItem(
                 shiftHorizontal={tooltipShiftHorizontal}
                 shiftVertical={tooltipShiftVertical}
                 shouldAutoDismiss
+                onHideTooltip={onHideTooltip}
             >
                 <View>
                     <Hoverable>
