@@ -2774,6 +2774,11 @@ const styles = (theme: ThemeColors) =>
             ...{borderRadius: variables.buttonBorderRadius},
         },
 
+        multiScanNavigateButton: {
+            height: 28,
+            width: 28,
+        },
+
         reportActionSystemMessageContainer: {
             marginLeft: 42,
         },

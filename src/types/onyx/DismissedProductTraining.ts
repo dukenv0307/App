@@ -9,6 +9,7 @@ const {
     SCAN_TEST_TOOLTIP,
     SCAN_TEST_TOOLTIP_MANAGER,
     SCAN_TEST_CONFIRMATION,
+    MULTI_SCAN_TOOLTIP,
 } = CONST.PRODUCT_TRAINING_TOOLTIP_NAMES;
 
 /**
@@ -73,9 +74,14 @@ type DismissedProductTraining = {
     [SCAN_TEST_CONFIRMATION]: DismissedProductTrainingElement;
 
     /**
-     * When user dismisses the ChangeReportPolicy feature training modal, we store the timestamp here.
+     * When user dismisses the multiScanTooltip product training tooltip, we store the timestamp here.
      */
     [CONST.CHANGE_POLICY_TRAINING_MODAL]: DismissedProductTrainingElement;
+
+    /**
+     * When user dismisses the multiScanTooltip product training tooltip, we store the timestamp here.
+     */
+    [MULTI_SCAN_TOOLTIP]: DismissedProductTrainingElement;
 };
 
 export default DismissedProductTraining;

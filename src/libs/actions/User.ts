@@ -1141,6 +1141,10 @@ function clearFocusModeNotification() {
     Onyx.set(ONYXKEYS.FOCUS_MODE_NOTIFICATION, false);
 }
 
+function clearMultiScanNotification() {
+    Onyx.set(ONYXKEYS.NVP_TRY_MULTI_SCAN, true);
+}
+
 function setShouldUseStagingServer(shouldUseStagingServer: boolean) {
     Onyx.merge(ONYXKEYS.USER, {shouldUseStagingServer});
 }
@@ -1554,4 +1558,5 @@ export {
     clearValidateCodeActionError,
     setIsDebugModeEnabled,
     resetValidateActionCodeSent,
+    clearMultiScanNotification,
 };

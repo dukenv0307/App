@@ -180,6 +180,12 @@ type MoneyRequestConfirmationListProps = {
 
     /** The PDF password callback */
     onPDFPassword?: () => void;
+
+    /** Whether the expense is a multi capture */
+    isMultiCapture?: boolean;
+
+    /** The total number of transactions */
+    totalTransactions?: number;
 };
 
 type MoneyRequestConfirmationListItem = Participant | OptionData;
@@ -220,6 +226,8 @@ function MoneyRequestConfirmationList({
     isConfirming,
     onPDFLoadError,
     onPDFPassword,
+    isMultiCapture = false,
+    totalTransactions = 0,
 }: MoneyRequestConfirmationListProps) {
     const [policyCategoriesReal] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${policyID}`);
     const [policyTags] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_TAGS}${policyID}`);
@@ -504,7 +512,11 @@ function MoneyRequestConfirmationList({
         } else if (isTypeSplit && iouAmount === 0) {
             text = translate('iou.splitExpense');
         } else if ((receiptPath && isTypeRequest) || isDistanceRequestWithPendingRoute || isPerDiemRequest) {
-            text = translate('iou.createExpense');
+            if (!isMultiCapture) {
+                text = translate('iou.createExpense');
+            } else {
+                text = translate('iou.createMultipleExpenses', {total: totalTransactions});
+            }
             if (iouAmount !== 0) {
                 text = translate('iou.createExpenseWithAmount', {amount: formattedAmount});
             }
@@ -531,6 +543,8 @@ function MoneyRequestConfirmationList({
         policy,
         translate,
         formattedAmount,
+        isMultiCapture,
+        totalTransactions,
     ]);
 
     const onSplitShareChange = useCallback(

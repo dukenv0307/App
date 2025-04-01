@@ -12,6 +12,7 @@ const {
     SCAN_TEST_TOOLTIP,
     SCAN_TEST_TOOLTIP_MANAGER,
     SCAN_TEST_CONFIRMATION,
+    MULTI_SCAN_TOOLTIP,
 } = CONST.PRODUCT_TRAINING_TOOLTIP_NAMES;
 
 type ProductTrainingTooltipName = ValueOf<typeof CONST.PRODUCT_TRAINING_TOOLTIP_NAMES>;
@@ -117,6 +118,13 @@ const TOOLTIPS: Record<ProductTrainingTooltipName, TooltipData> = {
         name: SCAN_TEST_CONFIRMATION,
         priority: 1100,
         shouldShow: () => true,
+    },
+    [MULTI_SCAN_TOOLTIP]: {
+        content: [{text: 'productTrainingTooltip.multiScanNavigationTooltip', isBold: false}],
+        name: MULTI_SCAN_TOOLTIP,
+        priority: 1000,
+        shouldShow: () => true,
+        onHideTooltip: () => dismissProductTraining(MULTI_SCAN_TOOLTIP),
     },
 };
 

@@ -31,6 +31,7 @@ import usePolicy from '@hooks/usePolicy';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {removeMultiDraftTransactions} from '@libs/actions/TransactionEdit';
 import {clearUserLocation, setUserLocation} from '@libs/actions/UserLocation';
 import {dismissProductTraining} from '@libs/actions/Welcome';
 import {isMobile, isMobileWebKit} from '@libs/Browser';
@@ -58,6 +59,7 @@ import {
     setMoneyRequestParticipants,
     setMoneyRequestParticipantsFromReport,
     setMoneyRequestReceipt,
+    setMoneyRequestReceiptsDraft,
     startSplitBill,
     trackExpense,
     updateLastLocationPermissionPrompt,
@@ -70,7 +72,9 @@ import type {Participant} from '@src/types/onyx/IOU';
 import type {Receipt} from '@src/types/onyx/Transaction';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {getLocationPermission} from './LocationPermission';
+import MultiScanNotification from './MultiScanNotification';
 import NavigationAwareCamera from './NavigationAwareCamera/WebCamera';
+import ReceiptsList from './ReceiptList';
 import type IOURequestStepScanProps from './types';
 
 function IOURequestStepScan({
@@ -115,6 +119,8 @@ function IOURequestStepScan({
     const [activePolicy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${activePolicyID}`);
     const [betas] = useOnyx(ONYXKEYS.BETAS);
     const [isLoadingReceipt, setIsLoadingReceipt] = useState(false);
+    const [isMultiCapture, setIsMultiCapture] = useState(false);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
 
     const [videoConstraints, setVideoConstraints] = useState<MediaTrackConstraints>();
     const isTabActive = useIsFocused();
@@ -262,32 +268,60 @@ function IOURequestStepScan({
     const navigateToParticipantPage = useCallback(() => {
         switch (iouType) {
             case CONST.IOU.TYPE.REQUEST:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.SUBMIT, transactionID, reportID, undefined, undefined, isMultiCapture));
                 break;
             case CONST.IOU.TYPE.SEND:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.PAY, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.PAY, transactionID, reportID, undefined, undefined, isMultiCapture));
                 break;
             default:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, transactionID, reportID, undefined, undefined, isMultiCapture));
         }
-    }, [iouType, reportID, transactionID]);
+    }, [iouType, reportID, transactionID, isMultiCapture]);
 
     const navigateToConfirmationPage = useCallback(
         (isTestTransaction = false) => {
             switch (iouType) {
                 case CONST.IOU.TYPE.REQUEST:
-                    Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
+                    Navigation.navigate(
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            CONST.IOU.TYPE.SUBMIT,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
+                    );
                     break;
                 case CONST.IOU.TYPE.SEND:
-                    Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.PAY, transactionID, reportID));
+                    Navigation.navigate(
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            CONST.IOU.TYPE.PAY,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
+                    );
                     break;
                 default:
                     Navigation.navigate(
-                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, isTestTransaction ? CONST.IOU.TYPE.SUBMIT : iouType, transactionID, reportID),
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            isTestTransaction ? CONST.IOU.TYPE.SUBMIT : iouType,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
                     );
             }
         },
-        [iouType, reportID, transactionID],
+        [iouType, reportID, transactionID, isMultiCapture],
     );
 
     const createTransaction = useCallback(
@@ -331,7 +365,7 @@ function IOURequestStepScan({
     );
 
     const navigateToConfirmationStep = useCallback(
-        (file: FileObject, source: string, locationPermissionGranted = false, isTestTransaction = false) => {
+        (file: FileObject, source: string, locationPermissionGranted = false, isTestTransaction = false, shouldNavigate = true) => {
             if (backTo) {
                 Navigation.goBack(backTo);
                 return;
@@ -369,6 +403,7 @@ function IOURequestStepScan({
                             currency: transaction?.currency ?? 'USD',
                             taxCode: transactionTaxCode,
                             taxAmount: transactionTaxAmount,
+                            shouldNavigate,
                         });
                         return;
                     }
@@ -403,6 +438,7 @@ function IOURequestStepScan({
                                                 long: successData.coords.longitude,
                                             },
                                         },
+                                        shouldNavigate,
                                     });
                                 } else {
                                     requestMoney({
@@ -428,6 +464,7 @@ function IOURequestStepScan({
                                             receipt,
                                             billable: false,
                                         },
+                                        shouldNavigate,
                                     });
                                 }
                             },
@@ -448,7 +485,7 @@ function IOURequestStepScan({
                     createTransaction(receipt, participant);
                     return;
                 }
-                setMoneyRequestParticipantsFromReport(transactionID, report).then(() => {
+                setMoneyRequestParticipantsFromReport(transactionID, report, isMultiCapture ? receipts.length : undefined).then(() => {
                     navigateToConfirmationPage();
                 });
                 return;
@@ -458,13 +495,15 @@ function IOURequestStepScan({
             // and an optimistic reportID was generated. In that case, the next step is to select the participants for this expense.
             if (iouType === CONST.IOU.TYPE.CREATE && isPaidGroupPolicy(activePolicy) && activePolicy?.isPolicyExpenseChatEnabled && !shouldRestrictUserBillableActions(activePolicy.id)) {
                 const activePolicyExpenseChat = getPolicyExpenseChat(currentUserPersonalDetails.accountID, activePolicy?.id);
-                setMoneyRequestParticipantsFromReport(transactionID, activePolicyExpenseChat).then(() => {
+                setMoneyRequestParticipantsFromReport(transactionID, activePolicyExpenseChat, isMultiCapture ? receipts.length : undefined).then(() => {
                     Navigation.navigate(
                         ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
                             CONST.IOU.ACTION.CREATE,
                             iouType === CONST.IOU.TYPE.CREATE ? CONST.IOU.TYPE.SUBMIT : iouType,
                             transactionID,
                             activePolicyExpenseChat?.reportID,
+                            undefined,
+                            isMultiCapture,
                         ),
                     );
                 });
@@ -498,6 +537,8 @@ function IOURequestStepScan({
             transactionTaxCode,
             transactionTaxAmount,
             policy,
+            isMultiCapture,
+            receipts.length,
             reportNameValuePairs,
         ],
     );
@@ -622,8 +663,12 @@ function IOURequestStepScan({
         const filename = `receipt_${Date.now()}.png`;
         const file = base64ToFile(imageBase64 ?? '', filename);
         const source = URL.createObjectURL(file);
-        setMoneyRequestReceipt(transactionID, source, file.name, !isEditing);
+        if (isMultiCapture) {
+            setReceipts([...receipts, {source, name: file.name}]);
+            return;
+        }
 
+        setMoneyRequestReceipt(transactionID, source, file.name, !isEditing);
         if (isEditing) {
             updateScanAndNavigate(file, source);
             return;
@@ -641,7 +686,18 @@ function IOURequestStepScan({
             }
         }
         navigateToConfirmationStep(file, source, false);
-    }, [transactionID, isEditing, shouldSkipConfirmation, navigateToConfirmationStep, requestCameraPermission, updateScanAndNavigate, transaction?.amount, iouType]);
+    }, [
+        transactionID,
+        isEditing,
+        shouldSkipConfirmation,
+        navigateToConfirmationStep,
+        requestCameraPermission,
+        updateScanAndNavigate,
+        transaction?.amount,
+        iouType,
+        isMultiCapture,
+        receipts,
+    ]);
 
     const clearTorchConstraints = useCallback(() => {
         if (!trackRef.current) {
@@ -686,6 +742,10 @@ function IOURequestStepScan({
         [],
     );
 
+    useEffect(() => {
+        removeMultiDraftTransactions();
+    }, []);
+
     const PDFThumbnailView = pdfFile ? (
         <PDFThumbnail
             style={styles.invisiblePDF}
@@ -713,9 +773,26 @@ function IOURequestStepScan({
         return translate(attachmentInvalidReason);
     };
 
+    const shouldShowCamera = cameraPermissionState === 'granted' && !isEmptyObject(videoConstraints);
+
+    const toggleMultiCapture = useCallback(() => {
+        setIsMultiCapture(!isMultiCapture);
+    }, [isMultiCapture]);
+
+    const processReceiptsAndNavigate = () => {
+        setMoneyRequestReceiptsDraft(receipts);
+        if (shouldSkipConfirmation) {
+            receipts.forEach((receipt, index) => {
+                navigateToConfirmationStep(receipt, receipt.source ?? '', false, false, index === receipts.length - 1);
+            });
+        } else {
+            navigateToConfirmationStep(receipts.at(0) ?? {}, receipts.at(0)?.source ?? '');
+        }
+    };
+
     const mobileCameraView = () => (
         <>
-            <View style={[styles.cameraView]}>
+            <View style={[styles.cameraView, shouldShowCamera ? {...styles.w100, ...styles.borderNone, ...styles.noBorderRadius} : undefined]}>
                 {PDFThumbnailView}
                 {((cameraPermissionState === 'prompt' && !isQueriedPermissionState) || (cameraPermissionState === 'granted' && isEmptyObject(videoConstraints))) && (
                     <ActivityIndicator
@@ -750,21 +827,48 @@ function IOURequestStepScan({
                         />
                     </View>
                 )}
-                {cameraPermissionState === 'granted' && !isEmptyObject(videoConstraints) && (
-                    <NavigationAwareCamera
-                        onUserMedia={setupCameraPermissionsAndCapabilities}
-                        onUserMediaError={() => setCameraPermissionState('denied')}
-                        style={{...styles.videoContainer, display: cameraPermissionState !== 'granted' ? 'none' : 'block'}}
-                        ref={cameraRef}
-                        screenshotFormat="image/png"
-                        videoConstraints={videoConstraints}
-                        forceScreenshotSourceSize
-                        audio={false}
-                        disablePictureInPicture={false}
-                        imageSmoothing={false}
-                        mirrored={false}
-                        screenshotQuality={0}
-                    />
+                {shouldShowCamera && (
+                    <View style={[styles.pRelative, styles.flex1, styles.w100, styles.h100]}>
+                        <NavigationAwareCamera
+                            onUserMedia={setupCameraPermissionsAndCapabilities}
+                            onUserMediaError={() => setCameraPermissionState('denied')}
+                            style={{...styles.videoContainer, position: 'absolute', display: cameraPermissionState !== 'granted' ? 'none' : 'block'}}
+                            ref={cameraRef}
+                            screenshotFormat="image/png"
+                            videoConstraints={videoConstraints}
+                            forceScreenshotSourceSize
+                            audio={false}
+                            disablePictureInPicture={false}
+                            imageSmoothing={false}
+                            mirrored={false}
+                            screenshotQuality={0}
+                        />
+                        <PressableWithFeedback
+                            role={CONST.ROLE.BUTTON}
+                            accessibilityLabel={translate('receipt.flash')}
+                            style={[
+                                styles.alignItemsEnd,
+                                !isTorchAvailable && styles.opacity0,
+                                styles.pAbsolute,
+                                styles.r4,
+                                styles.t5,
+                                styles.p2,
+                                styles.zIndex10,
+                                styles.borderRadiusNormal,
+                                styles.buttonDefaultBG,
+                                {width: 40, height: 40},
+                            ]}
+                            onPress={toggleFlashlight}
+                            disabled={!isTorchAvailable}
+                        >
+                            <Icon
+                                height={16}
+                                width={16}
+                                src={isFlashLightOn ? Expensicons.Bolt : Expensicons.boltSlash}
+                                fill={theme.textSupporting}
+                            />
+                        </PressableWithFeedback>
+                    </View>
                 )}
             </View>
 
@@ -802,19 +906,22 @@ function IOURequestStepScan({
                 </PressableWithFeedback>
                 <PressableWithFeedback
                     role={CONST.ROLE.BUTTON}
-                    accessibilityLabel={translate('receipt.flash')}
-                    style={[styles.alignItemsEnd, !isTorchAvailable && styles.opacity0]}
-                    onPress={toggleFlashlight}
-                    disabled={!isTorchAvailable}
+                    accessibilityLabel={translate('receipt.multiCaptureMode')}
+                    onPress={toggleMultiCapture}
                 >
                     <Icon
                         height={32}
                         width={32}
-                        src={isFlashLightOn ? Expensicons.Bolt : Expensicons.boltSlash}
-                        fill={theme.textSupporting}
+                        src={isMultiCapture ? Expensicons.MultiScanModeOn : Expensicons.MultiScanModeOff}
                     />
                 </PressableWithFeedback>
             </View>
+            <ReceiptsList
+                receipts={receipts}
+                isMultiCapture={isMultiCapture}
+                onNext={processReceiptsAndNavigate}
+                setReceipts={setReceipts}
+            />
         </>
     );
 
@@ -912,6 +1019,7 @@ function IOURequestStepScan({
                             confirmText={translate('common.close')}
                             shouldShowCancelButton={false}
                         />
+                        <MultiScanNotification isMultiCapture={isMultiCapture} />
                         {startLocationPermissionFlow && !!fileResize && (
                             <LocationPermissionModal
                                 startPermissionFlow={startLocationPermissionFlow}

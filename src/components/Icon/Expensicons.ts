@@ -145,6 +145,8 @@ import MoneyCircle from '@assets/images/money-circle.svg';
 import MoneySearch from '@assets/images/money-search.svg';
 import MoneyWaving from '@assets/images/money-waving.svg';
 import Monitor from '@assets/images/monitor.svg';
+import MultiScanModeOff from '@assets/images/multi-scan-mode-off.svg';
+import MultiScanModeOn from '@assets/images/multi-scan-mode-on.svg';
 import Mute from '@assets/images/mute.svg';
 import NewWindow from '@assets/images/new-window.svg';
 import NewWorkspace from '@assets/images/new-workspace.svg';
@@ -438,4 +440,6 @@ export {
     MagnifyingGlassSpyMouthClosed,
     EmptySquare,
     CheckSquare,
+    MultiScanModeOn,
+    MultiScanModeOff,
 };

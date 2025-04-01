@@ -387,6 +387,7 @@ type RequestMoneyInformation = {
     reimbursible?: boolean;
     transactionParams: RequestMoneyTransactionParams;
     isRetry?: boolean;
+    shouldNavigate?: boolean;
 };
 
 type MoneyRequestInformationParams = {
@@ -493,6 +494,7 @@ type CreateTrackExpenseParams = {
     policyParams?: BasePolicyParams;
     transactionParams: TrackExpenseTransactionParams;
     isRetry?: boolean;
+    shouldNavigate?: boolean;
 };
 
 type BuildOnyxDataForInvoiceParams = {
@@ -575,6 +577,22 @@ type StartSplitBilActionParams = {
     currency: string;
     taxCode: string;
     taxAmount: number;
+    shouldNavigate?: boolean;
+};
+
+type StartSplitBilActionWithReceipsParams = {
+    participants: Participant[];
+    currentUserLogin: string;
+    currentUserAccountID: number;
+    comment: string;
+    existingSplitChatReportID?: string;
+    billable?: boolean;
+    category: string | undefined;
+    tag: string | undefined;
+    currency: string;
+    taxCode: string;
+    taxAmount: number;
+    receipts?: Receipt[];
 };
 
 type ReplaceReceipt = {
@@ -913,8 +931,20 @@ function setMoneyRequestBillable(transactionID: string, billable: boolean) {
     Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {billable});
 }
 
-function setMoneyRequestParticipants(transactionID: string, participants: Participant[] = []) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {participants});
+function setMoneyRequestParticipants(transactionID: string, participants: Participant[] = [], totalTransactions?: number) {
+    if (!totalTransactions) {
+        Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {participants});
+    } else {
+        const transactionDrafts: OnyxUpdate[] = [];
+        Array.from({length: totalTransactions}, (_, i) => i + 1).forEach((id) => {
+            transactionDrafts.push({
+                onyxMethod: Onyx.METHOD.MERGE,
+                key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${id}`,
+                value: {participants},
+            });
+        });
+        return Onyx.update(transactionDrafts);
+    }
 }
 
 function setSplitPayer(transactionID: string, payerAccountID: number) {
@@ -926,6 +956,27 @@ function setMoneyRequestReceipt(transactionID: string, source: string, filename:
         receipt: {source, type: type ?? ''},
         filename,
     });
+}
+
+function setMoneyRequestReceiptsDraft(receipts: Receipt[]) {
+    const transactionDrafts: OnyxUpdate[] = [];
+    const transactionDraft1 = allTransactionDrafts[`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}1`];
+
+    receipts.forEach((receipt, index) => {
+        transactionDrafts.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${index + 1}`,
+            value: {
+                ...transactionDraft1,
+                ...(allTransactionDrafts[`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${index + 1}`] ?? {}),
+                transactionID: `${index + 1}`,
+                receipt: {source: receipt.source},
+                filename: receipt.name,
+                isDraft: true,
+            },
+        });
+    });
+    Onyx.update(transactionDrafts);
 }
 
 /**
@@ -4744,6 +4795,8 @@ function requestMoney(requestMoneyInformation: RequestMoneyInformation) {
     const {payeeAccountID} = participantParams;
     const parsedComment = getParsedComment(transactionParams.comment ?? '');
     transactionParams.comment = parsedComment;
+    const shouldNavigate = requestMoneyInformation.shouldNavigate ?? true;
+
     const {
         amount,
         currency,
@@ -4904,7 +4957,12 @@ function requestMoney(requestMoneyInformation: RequestMoneyInformation) {
         }
     }
 
-    InteractionManager.runAfterInteractions(() => removeDraftTransaction(CONST.IOU.OPTIMISTIC_TRANSACTION_ID));
+    InteractionManager.runAfterInteractions(() => removeDraftTransaction(transaction.transactionID));
+
+    if (!shouldNavigate) {
+        return;
+    }
+
     if (!requestMoneyInformation.isRetry) {
         dismissModalAndOpenReportInInboxTab(activeReportID);
     }
@@ -5315,7 +5373,12 @@ function trackExpense(params: CreateTrackExpenseParams) {
             API.write(WRITE_COMMANDS.TRACK_EXPENSE, parameters, onyxData);
         }
     }
-    InteractionManager.runAfterInteractions(() => removeDraftTransaction(CONST.IOU.OPTIMISTIC_TRANSACTION_ID));
+    InteractionManager.runAfterInteractions(() => removeDraftTransaction(transaction?.transactionID));
+
+    if (!params.shouldNavigate) {
+        return;
+    }
+
     if (!params.isRetry) {
         dismissModalAndOpenReportInInboxTab(activeReportID);
     }
@@ -5985,6 +6048,44 @@ function splitBillAndOpenReport({
  *
  * @param existingSplitChatReportID - Either a group DM or a workspace chat
  */
+function startSplitBillWithReceipts({
+    participants,
+    currentUserLogin,
+    currentUserAccountID,
+    comment,
+    receipts,
+    existingSplitChatReportID,
+    billable = false,
+    category = '',
+    tag = '',
+    currency,
+    taxCode = '',
+    taxAmount = 0,
+}: StartSplitBilActionWithReceipsParams) {
+    receipts?.forEach((receipt, index) => {
+        return startSplitBill({
+            existingSplitChatReportID,
+            billable,
+            category,
+            tag,
+            currency,
+            taxCode,
+            taxAmount,
+            receipt,
+            participants,
+            currentUserLogin,
+            currentUserAccountID,
+            comment,
+            shouldNavigate: index === receipts.length - 1,
+        });
+    });
+}
+
+/** Used exclusively for starting a split expense request that contains a receipt, the split request will be completed once the receipt is scanned
+ *  or user enters details manually.
+ *
+ * @param existingSplitChatReportID - Either a group DM or a workspace chat
+ */
 function startSplitBill({
     participants,
     currentUserLogin,
@@ -5998,6 +6099,7 @@ function startSplitBill({
     currency,
     taxCode = '',
     taxAmount = 0,
+    shouldNavigate = true,
 }: StartSplitBilActionParams) {
     const currentUserEmailForIOUSplit = addSMSDomainIfPhoneNumber(currentUserLogin);
     const participantAccountIDs = participants.map((participant) => Number(participant.accountID));
@@ -6295,8 +6397,10 @@ function startSplitBill({
 
     API.write(WRITE_COMMANDS.START_SPLIT_BILL, parameters, {optimisticData, successData, failureData});
 
-    Navigation.dismissModalWithReport({report: splitChatReport});
-    notifyNewAction(splitChatReport.reportID, currentUserAccountID);
+    if (shouldNavigate) {
+        Navigation.dismissModalWithReport({report: splitChatReport});
+        notifyNewAction(splitChatReport.reportID, currentUserAccountID);
+    }
 }
 
 /** Used for editing a split expense while it's still scanning or when SmartScan fails, it completes a split expense started by startSplitBill above.
@@ -9565,9 +9669,24 @@ function getMoneyRequestParticipantsFromReport(report: OnyxEntry<OnyxTypes.Repor
  * @param transactionID of the transaction to set the participants of
  * @param report attached to the transaction
  */
-function setMoneyRequestParticipantsFromReport(transactionID: string, report: OnyxEntry<OnyxTypes.Report>) {
+function setMoneyRequestParticipantsFromReport(transactionID: string, report: OnyxEntry<OnyxTypes.Report>, totalTransactions?: number) {
     const participants = getMoneyRequestParticipantsFromReport(report);
-    return Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {participants, participantsAutoAssigned: true});
+    if (!totalTransactions) {
+        return Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {participants, participantsAutoAssigned: true});
+    }
+    const transactionDrafts: OnyxUpdate[] = [];
+
+    Array.from({length: totalTransactions}, (_, i) => i + 1).forEach((id) => {
+        transactionDrafts.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${id}`,
+            value: {
+                participants,
+                participantsAutoAssigned: true,
+            },
+        });
+    });
+    return Onyx.update(transactionDrafts);
 }
 
 function setMoneyRequestTaxRate(transactionID: string, taxCode: string | null) {
@@ -10447,5 +10566,7 @@ export {
     canSubmitReport,
     submitPerDiemExpense,
     calculateDiffAmount,
+    startSplitBillWithReceipts,
+    setMoneyRequestReceiptsDraft,
 };
 export type {GPSPoint as GpsPoint, IOURequestType, StartSplitBilActionParams, CreateTrackExpenseParams, RequestMoneyInformation, ReplaceReceipt};

@@ -72,6 +72,8 @@ function HeaderWithBackButton({
     progressBarPercentage,
     style,
     subTitleLink = '',
+    rightIcon,
+    onRightIconPress = () => {},
 }: HeaderWithBackButtonProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -249,6 +251,18 @@ function HeaderWithBackButton({
                             anchorAlignment={threeDotsAnchorAlignment}
                             shouldSetModalVisibility={shouldSetModalVisibility}
                         />
+                    )}
+                    {!!rightIcon && (
+                        <PressableWithoutFeedback
+                            onPress={onRightIconPress}
+                            role={CONST.ROLE.BUTTON}
+                            accessibilityLabel={translate('common.delete')}
+                        >
+                            <Icon
+                                src={rightIcon}
+                                fill={iconFill ?? theme.icon}
+                            />
+                        </PressableWithoutFeedback>
                     )}
                     {shouldShowCloseButton && (
                         <Tooltip text={translate('common.close')}>

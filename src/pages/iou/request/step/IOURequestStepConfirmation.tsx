@@ -4,6 +4,7 @@ import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
 import type {FileObject} from '@components/AttachmentModal';
+import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import DragAndDropProvider from '@components/DragAndDrop/Provider';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -13,13 +14,17 @@ import LocationPermissionModal from '@components/LocationPermissionModal';
 import MoneyRequestConfirmationList from '@components/MoneyRequestConfirmationList';
 import {usePersonalDetails} from '@components/OnyxProvider';
 import PDFThumbnail from '@components/PDFThumbnail';
+import {useProductTrainingContext} from '@components/ProductTrainingContext';
 import ScreenWrapper from '@components/ScreenWrapper';
+import EducationalTooltip from '@components/Tooltip/EducationalTooltip';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useFetchRoute from '@hooks/useFetchRoute';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useThreeDotsAnchorPosition from '@hooks/useThreeDotsAnchorPosition';
+import {getPolicyCategoriesData} from '@libs/actions/Policy/Category';
+import {getPolicyTagsData} from '@libs/actions/Policy/Tag';
 import DateUtils from '@libs/DateUtils';
 import {canUseTouchScreen} from '@libs/DeviceCapabilities';
 import {isLocalFile as isLocalFileFileUtils, resizeImageIfNeeded, validateReceipt} from '@libs/fileDownload/FileUtils';
@@ -29,7 +34,8 @@ import Log from '@libs/Log';
 import navigateAfterInteraction from '@libs/Navigation/navigateAfterInteraction';
 import Navigation from '@libs/Navigation/Navigation';
 import {getParticipantsOption, getReportOption} from '@libs/OptionsListUtils';
-import {generateReportID, getBankAccountRoute, isSelectedManagerMcTest} from '@libs/ReportUtils';
+import {getPolicy} from '@libs/PolicyUtils';
+import {generateReportID, getBankAccountRoute, getReportOrDraftReport, isSelectedManagerMcTest} from '@libs/ReportUtils';
 import playSound, {SOUNDS} from '@libs/Sound';
 import {getDefaultTaxCode, getRateID, getRequestType, getValidWaypoints} from '@libs/TransactionUtils';
 import ReceiptDropUI from '@pages/iou/ReceiptDropUI';
@@ -59,9 +65,11 @@ import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
+import type {Policy, PolicyCategories, PolicyTagLists, Report} from '@src/types/onyx';
 import type {Participant} from '@src/types/onyx/IOU';
 import type {PaymentMethodType} from '@src/types/onyx/OriginalMessage';
 import type {Receipt} from '@src/types/onyx/Transaction';
+import type Transaction from '@src/types/onyx/Transaction';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {WithFullTransactionOrNotFoundProps} from './withFullTransactionOrNotFound';
 import withFullTransactionOrNotFound from './withFullTransactionOrNotFound';
@@ -71,18 +79,22 @@ import withWritableReportOrNotFound from './withWritableReportOrNotFound';
 type IOURequestStepConfirmationProps = WithWritableReportOrNotFoundProps<typeof SCREENS.MONEY_REQUEST.STEP_CONFIRMATION> &
     WithFullTransactionOrNotFoundProps<typeof SCREENS.MONEY_REQUEST.STEP_CONFIRMATION>;
 
+type TaxParams = {
+    taxCode: string;
+    taxAmount: number;
+};
+
 function IOURequestStepConfirmation({
     report: reportReal,
     reportDraft,
     route: {
-        params: {iouType, reportID, transactionID, action, participantsAutoAssigned: participantsAutoAssignedFromRoute},
+        params: {iouType, reportID, transactionID, action, participantsAutoAssigned: participantsAutoAssignedFromRoute, isMultiCapture, backTo},
     },
     transaction,
     isLoadingTransaction,
 }: IOURequestStepConfirmationProps) {
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
     const personalDetails = usePersonalDetails();
-
     const [policyDraft] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_DRAFTS}${getIOURequestPolicyID(transaction, reportDraft)}`);
     const [policyReal] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${getIOURequestPolicyID(transaction, reportReal)}`);
     const [policyCategoriesReal] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${getIOURequestPolicyID(transaction, reportReal)}`);
@@ -109,15 +121,14 @@ function IOURequestStepConfirmation({
     const [pdfFile, setPdfFile] = useState<null | FileObject>(null);
     const [isLoadingReceipt, setIsLoadingReceipt] = useState(false);
 
-    const [receiptFile, setReceiptFile] = useState<OnyxEntry<Receipt>>();
+    const [receiptFiles, setReceiptFiles] = useState<Record<string, Receipt>>({});
     const requestType = getRequestType(transaction);
     const isDistanceRequest = requestType === CONST.IOU.REQUEST_TYPE.DISTANCE;
     const isPerDiemRequest = requestType === CONST.IOU.REQUEST_TYPE.PER_DIEM;
     const [lastLocationPermissionPrompt] = useOnyx(ONYXKEYS.NVP_LAST_LOCATION_PERMISSION_PROMPT);
+    const [transactionDrafts] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT);
 
     const receiptFilename = transaction?.filename;
-    const receiptPath = transaction?.receipt?.source;
-    const receiptType = transaction?.receipt?.type;
     const customUnitRateID = getRateID(transaction) ?? '';
     const defaultTaxCode = getDefaultTaxCode(policy, transaction);
     const transactionTaxCode = (transaction?.taxCode ? transaction?.taxCode : defaultTaxCode) ?? '';
@@ -142,9 +153,13 @@ function IOURequestStepConfirmation({
         };
     }, [personalDetails, transaction?.participants, transaction?.splitPayerAccountIDs]);
 
-    const gpsRequired = transaction?.amount === 0 && iouType !== CONST.IOU.TYPE.SPLIT && receiptFile && !isTestTransaction;
+    const gpsRequired = transaction?.amount === 0 && iouType !== CONST.IOU.TYPE.SPLIT && receiptFiles[transactionID] && !isTestTransaction;
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
+
+    const {shouldShowProductTrainingTooltip, renderProductTrainingTooltip} = useProductTrainingContext(CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.MULTI_SCAN_TOOLTIP, isMultiCapture);
+
+    const totalTransactions = Object.keys(transactionDrafts ?? {}).length;
 
     const headerTitle = useMemo(() => {
         if (isCategorizingTrackExpense) {
@@ -169,6 +184,7 @@ function IOURequestStepConfirmation({
             }) ?? [],
         [transaction?.participants, personalDetails, iouType],
     );
+
     const isPolicyExpenseChat = useMemo(() => participants?.some((participant) => participant.isPolicyExpenseChat), [participants]);
     const formHasBeenSubmitted = useRef(false);
 
@@ -294,12 +310,13 @@ function IOURequestStepConfirmation({
     const navigateBack = useCallback(() => {
         // If the action is categorize and there's no policies other than personal one, we simply call goBack(), i.e: dismiss the whole flow together
         // We don't need to subscribe to policy_ collection as we only need to check on the latest collection value
+        const backTransactionID = isMultiCapture ? '1' : transactionID;
         if (action === CONST.IOU.ACTION.CATEGORIZE) {
             Navigation.goBack();
             return;
         }
         if (isPerDiemRequest) {
-            Navigation.goBack(ROUTES.MONEY_REQUEST_STEP_SUBRATE.getRoute(action, iouType, transactionID, reportID));
+            Navigation.goBack(ROUTES.MONEY_REQUEST_STEP_SUBRATE.getRoute(action, iouType, backTransactionID, reportID));
             return;
         }
 
@@ -307,18 +324,18 @@ function IOURequestStepConfirmation({
             // If the participants weren't automatically added to the transaction, then we should go back to the IOURequestStepParticipants.
             if (!transaction?.participantsAutoAssigned && participantsAutoAssignedFromRoute !== 'true') {
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                Navigation.goBack(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, transactionID, transaction?.reportID || reportID, undefined, action), {compareParams: false});
+                Navigation.goBack(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, backTransactionID, transaction?.reportID || reportID, undefined, action), {compareParams: false});
                 return;
             }
 
             // If the participant was auto-assigned, we need to keep the reportID that is already on the stack.
             // This will allow the user to edit the participant field after going back and forward.
-            Navigation.goBack();
+            Navigation.goBack(backTo);
             return;
         }
 
         // This has selected the participants from the beginning and the participant field shouldn't be editable.
-        navigateToStartMoneyRequestStep(requestType, iouType, transactionID, reportID, action);
+        navigateToStartMoneyRequestStep(requestType, iouType, backTransactionID, reportID, action);
     }, [
         action,
         isPerDiemRequest,
@@ -330,6 +347,8 @@ function IOURequestStepConfirmation({
         iouType,
         transactionID,
         reportID,
+        isMultiCapture,
+        backTo,
     ]);
 
     const navigateToAddReceipt = useCallback(() => {
@@ -341,81 +360,99 @@ function IOURequestStepConfirmation({
     // the image ceases to exist. The best way for the user to recover from this is to start over from the start of the request process.
     // skip this in case user is moving the transaction as the receipt path will be valid in that case
     useEffect(() => {
-        const isLocalFile = isLocalFileFileUtils(receiptPath);
+        Object.values(transactionDrafts ?? {}).forEach((transactionDraft) => {
+            if (!transactionDraft?.receipt) {
+                return;
+            }
+            const receiptPath = transactionDraft?.receipt?.source;
+            const receiptType = transactionDraft?.receipt?.type;
 
-        if (!isLocalFile) {
-            setReceiptFile(transaction?.receipt);
-            return;
-        }
+            const isLocalFile = isLocalFileFileUtils(receiptPath);
 
-        const onSuccess = (file: File) => {
-            const receipt: Receipt = file;
-            receipt.state = file && requestType === CONST.IOU.REQUEST_TYPE.MANUAL ? CONST.IOU.RECEIPT_STATE.OPEN : CONST.IOU.RECEIPT_STATE.SCANREADY;
+            if (!isLocalFile) {
+                setReceiptFiles((prevFiles) => ({
+                    ...prevFiles,
+                    [transactionDraft.transactionID]: {
+                        ...transactionDraft.receipt,
+                    },
+                }));
+                return;
+            }
 
-            setReceiptFile(receipt);
-        };
+            const onSuccess = (file: File) => {
+                const receipt: Receipt = file;
+                receipt.state = file && requestType === CONST.IOU.REQUEST_TYPE.MANUAL ? CONST.IOU.RECEIPT_STATE.OPEN : CONST.IOU.RECEIPT_STATE.SCANREADY;
+                setReceiptFiles((prevFiles) => ({
+                    ...prevFiles,
+                    [transactionDraft.transactionID]: receipt,
+                }));
+            };
 
-        navigateToStartStepIfScanFileCannotBeRead(receiptFilename, receiptPath, onSuccess, requestType, iouType, transactionID, reportID, receiptType);
-    }, [receiptType, receiptPath, receiptFilename, requestType, iouType, transactionID, reportID, action, transaction?.receipt, report, transaction, participants]);
+            navigateToStartStepIfScanFileCannotBeRead(receiptFilename, receiptPath, onSuccess, requestType, iouType, transactionID, reportID, receiptType);
+        });
+    }, [receiptFilename, requestType, iouType, transactionID, reportID, action, report, participants, transactionDrafts]);
 
     const requestMoney = useCallback(
-        (selectedParticipants: Participant[], trimmedComment: string, receiptObj?: Receipt, gpsPoints?: GpsPoint) => {
-            if (!transaction) {
+        (
+            transactionPrams: OnyxEntry<Transaction>,
+            selectedParticipants: Participant[],
+            trimmedComment: string,
+            reportPrams: OnyxEntry<Report>,
+            receiptObj?: Receipt,
+            gpsPoints?: GpsPoint,
+            taxParams?: TaxParams,
+            policyParams?: OnyxEntry<Policy>,
+            policyTagsParams?: OnyxEntry<PolicyTagLists>,
+            policyCategoriesParams?: OnyxEntry<PolicyCategories>,
+            shouldNavigate = true,
+        ) => {
+            if (!transactionPrams) {
                 return;
             }
 
             const participant = selectedParticipants.at(0);
+            const {taxCode, taxAmount} = taxParams ?? {};
             if (!participant) {
                 return;
             }
+
             requestMoneyIOUActions({
-                report,
+                report: reportPrams,
                 participantParams: {
                     payeeEmail: currentUserPersonalDetails.login,
                     payeeAccountID: currentUserPersonalDetails.accountID,
                     participant,
                 },
                 policyParams: {
-                    policy,
-                    policyTagList: policyTags,
-                    policyCategories,
+                    policy: policyParams,
+                    policyTagList: policyTagsParams,
+                    policyCategories: policyCategoriesParams,
                 },
                 gpsPoints,
                 action,
                 transactionParams: {
-                    amount: transaction.amount,
-                    attendees: transaction.attendees,
-                    currency: transaction.currency,
-                    created: transaction.created,
-                    merchant: transaction.merchant,
+                    amount: transactionPrams.amount,
+                    attendees: transactionPrams.attendees,
+                    currency: transactionPrams.currency,
+                    created: transactionPrams.created,
+                    merchant: transactionPrams.merchant,
                     comment: trimmedComment,
                     receipt: receiptObj,
-                    category: transaction.category,
-                    tag: transaction.tag,
-                    taxCode: transactionTaxCode,
-                    taxAmount: transactionTaxAmount,
-                    billable: transaction.billable,
-                    actionableWhisperReportActionID: transaction.actionableWhisperReportActionID,
-                    linkedTrackedExpenseReportAction: transaction.linkedTrackedExpenseReportAction,
-                    linkedTrackedExpenseReportID: transaction.linkedTrackedExpenseReportID,
-                    waypoints: Object.keys(transaction.comment?.waypoints ?? {}).length ? getValidWaypoints(transaction.comment?.waypoints, true) : undefined,
+                    category: transactionPrams.category,
+                    tag: transactionPrams.tag,
+                    taxCode,
+                    taxAmount,
+                    billable: transactionPrams.billable,
+                    actionableWhisperReportActionID: transactionPrams.actionableWhisperReportActionID,
+                    linkedTrackedExpenseReportAction: transactionPrams.linkedTrackedExpenseReportAction,
+                    linkedTrackedExpenseReportID: transactionPrams.linkedTrackedExpenseReportID,
+                    waypoints: Object.keys(transactionPrams.comment?.waypoints ?? {}).length ? getValidWaypoints(transactionPrams.comment?.waypoints, true) : undefined,
                     customUnitRateID,
                 },
+                shouldNavigate,
             });
         },
-        [
-            report,
-            transaction,
-            transactionTaxCode,
-            transactionTaxAmount,
-            currentUserPersonalDetails.login,
-            currentUserPersonalDetails.accountID,
-            policy,
-            policyTags,
-            policyCategories,
-            action,
-            customUnitRateID,
-        ],
+        [currentUserPersonalDetails.login, currentUserPersonalDetails.accountID, action, customUnitRateID],
     );
 
     const submitPerDiemExpense = useCallback(
@@ -455,16 +492,29 @@ function IOURequestStepConfirmation({
     );
 
     const trackExpense = useCallback(
-        (selectedParticipants: Participant[], trimmedComment: string, receiptObj?: OnyxEntry<Receipt>, gpsPoints?: GpsPoint) => {
-            if (!report || !transaction) {
+        (
+            transactionParams: OnyxEntry<Transaction>,
+            selectedParticipants: Participant[],
+            trimmedComment: string,
+            reportParams: OnyxEntry<Report>,
+            receiptObj?: OnyxEntry<Receipt>,
+            gpsPoints?: GpsPoint,
+            taxParams?: TaxParams,
+            policyParams?: OnyxEntry<Policy>,
+            policyTagsParams?: OnyxEntry<PolicyTagLists>,
+            policyCategoriesParams?: OnyxEntry<PolicyCategories>,
+            shouldNavigate = false,
+        ) => {
+            if (!reportParams || !transactionParams) {
                 return;
             }
             const participant = selectedParticipants.at(0);
+            const {taxCode, taxAmount} = taxParams ?? {};
             if (!participant) {
                 return;
             }
             trackExpenseIOUActions({
-                report,
+                report: reportParams,
                 isDraftPolicy,
                 action,
                 participantParams: {
@@ -473,45 +523,33 @@ function IOURequestStepConfirmation({
                     participant,
                 },
                 policyParams: {
-                    policy,
-                    policyCategories,
-                    policyTagList: policyTags,
+                    policy: policyParams,
+                    policyCategories: policyCategoriesParams,
+                    policyTagList: policyTagsParams,
                 },
                 transactionParams: {
-                    amount: transaction.amount,
-                    currency: transaction.currency,
-                    created: transaction.created,
-                    merchant: transaction.merchant,
+                    amount: transactionParams.amount,
+                    currency: transactionParams.currency,
+                    created: transactionParams.created,
+                    merchant: transactionParams.merchant,
                     comment: trimmedComment,
                     receipt: receiptObj,
-                    category: transaction.category,
-                    tag: transaction.tag,
-                    taxCode: transactionTaxCode,
-                    taxAmount: transactionTaxAmount,
-                    billable: transaction.billable,
+                    category: transactionParams.category,
+                    tag: transactionParams.tag,
+                    taxCode,
+                    taxAmount,
+                    billable: transactionParams.billable,
                     gpsPoints,
-                    validWaypoints: Object.keys(transaction?.comment?.waypoints ?? {}).length ? getValidWaypoints(transaction.comment?.waypoints, true) : undefined,
-                    actionableWhisperReportActionID: transaction.actionableWhisperReportActionID,
-                    linkedTrackedExpenseReportAction: transaction.linkedTrackedExpenseReportAction,
-                    linkedTrackedExpenseReportID: transaction.linkedTrackedExpenseReportID,
+                    validWaypoints: Object.keys(transactionParams?.comment?.waypoints ?? {}).length ? getValidWaypoints(transactionParams.comment?.waypoints, true) : undefined,
+                    actionableWhisperReportActionID: transactionParams.actionableWhisperReportActionID,
+                    linkedTrackedExpenseReportAction: transactionParams.linkedTrackedExpenseReportAction,
+                    linkedTrackedExpenseReportID: transactionParams.linkedTrackedExpenseReportID,
                     customUnitRateID,
                 },
+                shouldNavigate,
             });
         },
-        [
-            report,
-            transaction,
-            currentUserPersonalDetails.login,
-            currentUserPersonalDetails.accountID,
-            transactionTaxCode,
-            transactionTaxAmount,
-            policy,
-            policyTags,
-            policyCategories,
-            action,
-            customUnitRateID,
-            isDraftPolicy,
-        ],
+        [currentUserPersonalDetails.login, currentUserPersonalDetails.accountID, action, customUnitRateID, isDraftPolicy],
     );
 
     const createDistanceRequest = useCallback(
@@ -582,30 +620,9 @@ function IOURequestStepConfirmation({
                 return;
             }
 
-            // If we have a receipt let's start the split expense by creating only the action, the transaction, and the group DM if needed
-            if (iouType === CONST.IOU.TYPE.SPLIT && receiptFile) {
-                if (currentUserPersonalDetails.login && !!transaction) {
-                    startSplitBill({
-                        participants: selectedParticipants,
-                        currentUserLogin: currentUserPersonalDetails.login,
-                        currentUserAccountID: currentUserPersonalDetails.accountID,
-                        comment: trimmedComment,
-                        receipt: receiptFile,
-                        existingSplitChatReportID: report?.reportID,
-                        billable: transaction.billable,
-                        category: transaction.category,
-                        tag: transaction.tag,
-                        currency: transaction.currency,
-                        taxCode: transactionTaxCode,
-                        taxAmount: transactionTaxAmount,
-                    });
-                }
-                return;
-            }
-
             // IOUs created from a group report will have a reportID param in the route.
             // Since the user is already viewing the report, we don't need to navigate them to the report
-            if (iouType === CONST.IOU.TYPE.SPLIT && !transaction?.isFromGlobalCreate) {
+            if (iouType === CONST.IOU.TYPE.SPLIT && !transaction?.isFromGlobalCreate && !receiptFiles[0]) {
                 if (currentUserPersonalDetails.login && !!transaction) {
                     splitBill({
                         participants: splitParticipants,
@@ -631,7 +648,7 @@ function IOURequestStepConfirmation({
             }
 
             // If the split expense is created from the global create menu, we also navigate the user to the group report
-            if (iouType === CONST.IOU.TYPE.SPLIT) {
+            if (iouType === CONST.IOU.TYPE.SPLIT && !receiptFiles[0]) {
                 if (currentUserPersonalDetails.login && !!transaction) {
                     splitBillAndOpenReport({
                         participants: splitParticipants,
@@ -655,34 +672,247 @@ function IOURequestStepConfirmation({
                 return;
             }
 
-            if (iouType === CONST.IOU.TYPE.INVOICE) {
-                sendInvoice(currentUserPersonalDetails.accountID, transaction, report, receiptFile, policy, policyTags, policyCategories);
+            if (isPerDiemRequest) {
+                submitPerDiemExpense(selectedParticipants, trimmedComment);
                 return;
             }
 
-            if (iouType === CONST.IOU.TYPE.TRACK || isCategorizingTrackExpense || isSharingTrackExpense) {
-                if (receiptFile && transaction) {
+            const transactionLength = Object.keys(transactionDrafts ?? {}).length;
+            Object.values(transactionDrafts ?? {}).forEach((transactionDraft, index) => {
+                if (!transactionDraft) {
+                    return;
+                }
+                const transactionDraftTaxCode = (transactionDraft?.taxCode ? transactionDraft?.taxCode : defaultTaxCode) ?? '';
+                const transactionDraftTaxAmount = transactionDraft?.taxAmount ?? 0;
+                const trimmedDraftComment = transactionDraft?.comment?.comment?.trim() ?? '';
+                const receiptFile = receiptFiles[transactionDraft.transactionID];
+                const selectedParticipantsDraft = transactionDraft.participants ?? [];
+
+                const reportPrams = getReportOrDraftReport(transactionDraft?.reportID);
+                const policyPrams = getPolicy(getIOURequestPolicyID(transactionDraft, reportPrams));
+                const policyTagsPrams = getPolicyTagsData(policyPrams?.id);
+                const policyCategoriesPrams = getPolicyCategoriesData(policyPrams?.id);
+
+                if (receiptFile) {
+                    receiptFile.state = requestType === CONST.IOU.REQUEST_TYPE.MANUAL ? CONST.IOU.RECEIPT_STATE.OPEN : CONST.IOU.RECEIPT_STATE.SCANREADY;
+                }
+
+                const shouldNavigate = transactionLength === index + 1;
+                // If we have a receipt let's start the split expense by creating only the action, the transaction, and the group DM if needed
+                if (iouType === CONST.IOU.TYPE.SPLIT && receiptFile) {
+                    if (currentUserPersonalDetails.login && !!transactionDraft) {
+                        startSplitBill({
+                            participants: selectedParticipantsDraft,
+                            currentUserLogin: currentUserPersonalDetails.login,
+                            currentUserAccountID: currentUserPersonalDetails.accountID,
+                            comment: trimmedDraftComment,
+                            receipt: receiptFile,
+                            existingSplitChatReportID: report?.reportID,
+                            billable: transactionDraft.billable,
+                            category: transactionDraft.category,
+                            tag: transactionDraft.tag,
+                            currency: transactionDraft.currency,
+                            taxCode: transactionDraftTaxCode,
+                            taxAmount: transactionDraftTaxAmount,
+                            shouldNavigate,
+                        });
+                    }
+                    return;
+                }
+
+                if (iouType === CONST.IOU.TYPE.INVOICE) {
+                    sendInvoice(currentUserPersonalDetails.accountID, transactionDraft, reportPrams, receiptFile, policyPrams, policyTagsPrams, policyCategoriesPrams);
+                    return;
+                }
+
+                if (iouType === CONST.IOU.TYPE.TRACK || isCategorizingTrackExpense || isSharingTrackExpense) {
+                    if (receiptFile && transactionDraft) {
+                        // If the transaction amount is zero, then the money is being requested through the "Scan" flow and the GPS coordinates need to be included.
+                        if (transactionDraft.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense && locationPermissionGranted) {
+                            if (userLocation) {
+                                trackExpense(
+                                    transactionDraft,
+                                    selectedParticipantsDraft,
+                                    trimmedDraftComment,
+                                    reportPrams,
+                                    receiptFile,
+                                    {
+                                        lat: userLocation.latitude,
+                                        long: userLocation.longitude,
+                                    },
+                                    {
+                                        taxCode: transactionDraftTaxCode,
+                                        taxAmount: transactionDraftTaxAmount,
+                                    },
+                                    policyPrams,
+                                    policyTagsPrams,
+                                    policyCategoriesPrams,
+                                    shouldNavigate,
+                                );
+                                return;
+                            }
+
+                            getCurrentPosition(
+                                (successData) => {
+                                    trackExpense(
+                                        transactionDraft,
+                                        selectedParticipantsDraft,
+                                        trimmedDraftComment,
+                                        reportPrams,
+                                        receiptFile,
+                                        {
+                                            lat: successData.coords.latitude,
+                                            long: successData.coords.longitude,
+                                        },
+                                        {
+                                            taxCode: transactionDraftTaxCode,
+                                            taxAmount: transactionDraftTaxAmount,
+                                        },
+                                        policyPrams,
+                                        policyTagsPrams,
+                                        policyCategoriesPrams,
+                                        shouldNavigate,
+                                    );
+                                },
+                                (errorData) => {
+                                    Log.info('[IOURequestStepConfirmation] getCurrentPosition failed', false, errorData);
+                                    // When there is an error, the money can still be requested, it just won't include the GPS coordinates
+                                    trackExpense(
+                                        transactionDraft,
+                                        selectedParticipantsDraft,
+                                        trimmedDraftComment,
+                                        reportPrams,
+                                        receiptFile,
+                                        undefined,
+                                        {
+                                            taxCode: transactionDraftTaxCode,
+                                            taxAmount: transactionDraftTaxAmount,
+                                        },
+                                        policyPrams,
+                                        policyTagsPrams,
+                                        policyCategoriesPrams,
+                                        shouldNavigate,
+                                    );
+                                },
+                                {
+                                    maximumAge: CONST.GPS.MAX_AGE,
+                                    timeout: CONST.GPS.TIMEOUT,
+                                },
+                            );
+                            return;
+                        }
+
+                        // Otherwise, the money is being requested through the "Manual" flow with an attached image and the GPS coordinates are not needed.
+                        trackExpense(
+                            transactionDraft,
+                            selectedParticipantsDraft,
+                            trimmedDraftComment,
+                            reportPrams,
+                            receiptFile,
+                            undefined,
+                            {
+                                taxCode: transactionDraftTaxCode,
+                                taxAmount: transactionDraftTaxAmount,
+                            },
+                            policyPrams,
+                            policyTagsPrams,
+                            policyCategoriesPrams,
+                            shouldNavigate,
+                        );
+                        return;
+                    }
+                    trackExpense(
+                        transactionDraft,
+                        selectedParticipantsDraft,
+                        trimmedDraftComment,
+                        reportPrams,
+                        receiptFile,
+                        undefined,
+                        {
+                            taxCode: transactionDraftTaxCode,
+                            taxAmount: transactionDraftTaxAmount,
+                        },
+                        policyPrams,
+                        policyTagsPrams,
+                        policyCategoriesPrams,
+                        shouldNavigate,
+                    );
+                    return;
+                }
+
+                if (receiptFile && !!transactionDraft) {
                     // If the transaction amount is zero, then the money is being requested through the "Scan" flow and the GPS coordinates need to be included.
-                    if (transaction.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense && locationPermissionGranted) {
+                    if (
+                        transactionDraft.amount === 0 &&
+                        !isSharingTrackExpense &&
+                        !isCategorizingTrackExpense &&
+                        locationPermissionGranted &&
+                        !selectedParticipants.some((participant) => isSelectedManagerMcTest(participant.login))
+                    ) {
                         if (userLocation) {
-                            trackExpense(selectedParticipants, trimmedComment, receiptFile, {
-                                lat: userLocation.latitude,
-                                long: userLocation.longitude,
-                            });
+                            requestMoney(
+                                transactionDraft,
+                                selectedParticipantsDraft,
+                                trimmedDraftComment,
+                                reportPrams,
+                                receiptFile,
+                                {
+                                    lat: userLocation.latitude,
+                                    long: userLocation.longitude,
+                                },
+                                {
+                                    taxCode: transactionDraftTaxCode,
+                                    taxAmount: transactionDraftTaxAmount,
+                                },
+                                policyPrams,
+                                policyTagsPrams,
+                                policyCategoriesPrams,
+                                shouldNavigate,
+                            );
                             return;
                         }
 
                         getCurrentPosition(
                             (successData) => {
-                                trackExpense(selectedParticipants, trimmedComment, receiptFile, {
-                                    lat: successData.coords.latitude,
-                                    long: successData.coords.longitude,
-                                });
+                                requestMoney(
+                                    transactionDraft,
+                                    selectedParticipantsDraft,
+                                    trimmedDraftComment,
+                                    reportPrams,
+                                    receiptFile,
+                                    {
+                                        lat: successData.coords.latitude,
+                                        long: successData.coords.longitude,
+                                    },
+                                    {
+                                        taxCode: transactionDraftTaxCode,
+                                        taxAmount: transactionDraftTaxAmount,
+                                    },
+                                    policyPrams,
+                                    policyTagsPrams,
+                                    policyCategoriesPrams,
+                                    shouldNavigate,
+                                );
                             },
                             (errorData) => {
                                 Log.info('[IOURequestStepConfirmation] getCurrentPosition failed', false, errorData);
                                 // When there is an error, the money can still be requested, it just won't include the GPS coordinates
-                                trackExpense(selectedParticipants, trimmedComment, receiptFile);
+                                requestMoney(
+                                    transactionDraft,
+                                    selectedParticipantsDraft,
+                                    trimmedDraftComment,
+                                    reportPrams,
+                                    receiptFile,
+                                    undefined,
+                                    {
+                                        taxCode: transactionDraftTaxCode,
+                                        taxAmount: transactionDraftTaxAmount,
+                                    },
+                                    policyPrams,
+                                    policyTagsPrams,
+                                    policyCategoriesPrams,
+                                    shouldNavigate,
+                                );
                             },
                             {
                                 maximumAge: CONST.GPS.MAX_AGE,
@@ -691,70 +921,48 @@ function IOURequestStepConfirmation({
                         );
                         return;
                     }
-
                     // Otherwise, the money is being requested through the "Manual" flow with an attached image and the GPS coordinates are not needed.
-                    trackExpense(selectedParticipants, trimmedComment, receiptFile);
-                    return;
-                }
-                trackExpense(selectedParticipants, trimmedComment, receiptFile);
-                return;
-            }
-
-            if (isPerDiemRequest) {
-                submitPerDiemExpense(selectedParticipants, trimmedComment);
-                return;
-            }
-
-            if (receiptFile && !!transaction) {
-                // If the transaction amount is zero, then the money is being requested through the "Scan" flow and the GPS coordinates need to be included.
-                if (
-                    transaction.amount === 0 &&
-                    !isSharingTrackExpense &&
-                    !isCategorizingTrackExpense &&
-                    locationPermissionGranted &&
-                    !selectedParticipants.some((participant) => isSelectedManagerMcTest(participant.login))
-                ) {
-                    if (userLocation) {
-                        requestMoney(selectedParticipants, trimmedComment, receiptFile, {
-                            lat: userLocation.latitude,
-                            long: userLocation.longitude,
-                        });
-                        return;
-                    }
-
-                    getCurrentPosition(
-                        (successData) => {
-                            requestMoney(selectedParticipants, trimmedComment, receiptFile, {
-                                lat: successData.coords.latitude,
-                                long: successData.coords.longitude,
-                            });
-                        },
-                        (errorData) => {
-                            Log.info('[IOURequestStepConfirmation] getCurrentPosition failed', false, errorData);
-                            // When there is an error, the money can still be requested, it just won't include the GPS coordinates
-                            requestMoney(selectedParticipants, trimmedComment, receiptFile);
-                        },
+                    requestMoney(
+                        transactionDraft,
+                        selectedParticipantsDraft,
+                        trimmedDraftComment,
+                        reportPrams,
+                        receiptFile,
+                        undefined,
                         {
-                            maximumAge: CONST.GPS.MAX_AGE,
-                            timeout: CONST.GPS.TIMEOUT,
+                            taxCode: transactionDraftTaxCode,
+                            taxAmount: transactionDraftTaxAmount,
                         },
+                        policyPrams,
+                        policyTagsPrams,
+                        policyCategoriesPrams,
+                        shouldNavigate,
                     );
                     return;
                 }
 
-                // Otherwise, the money is being requested through the "Manual" flow with an attached image and the GPS coordinates are not needed.
-                requestMoney(selectedParticipants, trimmedComment, receiptFile);
-                return;
-            }
-
-            requestMoney(selectedParticipants, trimmedComment);
+                requestMoney(
+                    transactionDraft,
+                    selectedParticipantsDraft,
+                    trimmedDraftComment,
+                    reportPrams,
+                    undefined,
+                    {
+                        taxCode: transactionDraftTaxCode,
+                        taxAmount: transactionDraftTaxAmount,
+                    },
+                    policyPrams,
+                    policyTagsPrams,
+                    policyCategoriesPrams,
+                );
+            });
         },
         [
             iouType,
-            transaction,
+            transactionDrafts,
             isDistanceRequest,
             isMovingTransactionFromTrackExpense,
-            receiptFile,
+            receiptFiles,
             isCategorizingTrackExpense,
             isSharingTrackExpense,
             isPerDiemRequest,
@@ -765,12 +973,12 @@ function IOURequestStepConfirmation({
             report,
             transactionTaxCode,
             transactionTaxAmount,
-            policy,
-            policyTags,
-            policyCategories,
             trackExpense,
             submitPerDiemExpense,
             userLocation,
+            defaultTaxCode,
+            requestType,
+            transaction,
         ],
     );
 
@@ -882,7 +1090,65 @@ function IOURequestStepConfirmation({
                                 onSelected: navigateToAddReceipt,
                             },
                         ]}
-                    />
+                    >
+                        {!!isMultiCapture && (
+                            <EducationalTooltip
+                                shouldRender={shouldShowProductTrainingTooltip}
+                                renderTooltipContent={renderProductTrainingTooltip}
+                                anchorAlignment={{
+                                    horizontal: CONST.MODAL.ANCHOR_ORIGIN_HORIZONTAL.RIGHT,
+                                    vertical: CONST.MODAL.ANCHOR_ORIGIN_VERTICAL.TOP,
+                                }}
+                                shiftHorizontal={-14}
+                                wrapperStyle={styles.productTrainingTooltipWrapper}
+                                shouldHideOnNavigate
+                            >
+                                <View style={[styles.flexRow, styles.gap1]}>
+                                    <Button
+                                        accessibilityLabel="back"
+                                        style={[styles.highlightBG, styles.borderRadiusNormal, styles.justifyContentCenter, styles.alignItemsCenter, styles.multiScanNavigateButton]}
+                                        isDisabled={transactionID === '1'}
+                                        onPress={() => {
+                                            Navigation.goBack(
+                                                ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                                                    action,
+                                                    iouType,
+                                                    `${parseInt(transactionID, 10) - 1}`,
+                                                    reportID,
+                                                    undefined,
+                                                    isMultiCapture,
+                                                    backTo,
+                                                ),
+                                            );
+                                        }}
+                                        small
+                                        icon={Expensicons.ArrowRight}
+                                        iconStyles={styles.flipUpsideDown}
+                                    />
+                                    <Button
+                                        accessibilityLabel="forward"
+                                        style={[styles.highlightBG, styles.borderRadiusNormal, styles.justifyContentCenter, styles.alignItemsCenter, styles.multiScanNavigateButton]}
+                                        isDisabled={transactionID === totalTransactions.toString()}
+                                        onPress={() => {
+                                            Navigation.navigate(
+                                                ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                                                    action,
+                                                    iouType,
+                                                    `${parseInt(transactionID, 10) + 1}`,
+                                                    reportID,
+                                                    undefined,
+                                                    isMultiCapture,
+                                                    backTo,
+                                                ),
+                                            );
+                                        }}
+                                        small
+                                        icon={Expensicons.ArrowRight}
+                                    />
+                                </View>
+                            </EducationalTooltip>
+                        )}
+                    </HeaderWithBackButton>
                     {(isLoading || isLoadingReceipt) && <FullScreenLoadingIndicator />}
                     {PDFThumbnailView}
                     <ReceiptDropUI
@@ -935,8 +1201,8 @@ function IOURequestStepConfirmation({
                         iouCategory={transaction?.category}
                         onConfirm={onConfirm}
                         onSendMoney={sendMoney}
-                        receiptPath={receiptPath}
-                        receiptFilename={receiptFilename}
+                        receiptPath={receiptFiles[transactionID]?.source}
+                        receiptFilename={receiptFiles[transactionID]?.name}
                         iouType={iouType}
                         reportID={reportID}
                         isPolicyExpenseChat={isPolicyExpenseChat}
@@ -952,6 +1218,8 @@ function IOURequestStepConfirmation({
                         shouldPlaySound={iouType === CONST.IOU.TYPE.PAY}
                         isConfirmed={isConfirmed}
                         isConfirming={isConfirming}
+                        isMultiCapture={isMultiCapture}
+                        totalTransactions={totalTransactions}
                     />
                 </View>
             </DragAndDropProvider>

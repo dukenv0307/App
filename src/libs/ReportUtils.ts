@@ -896,6 +896,18 @@ Onyx.connect({
     callback: (value) => (allBetas = value),
 });
 
+let totalTransactions: number;
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.TRANSACTION_DRAFT,
+    waitForCollectionCallback: true,
+    callback: (value) => {
+        if (!value) {
+            return;
+        }
+        totalTransactions = Object.values(value).length;
+    },
+});
+
 let allTransactions: OnyxCollection<Transaction> = {};
 let reportsTransactions: Record<string, Transaction[]> = {};
 Onyx.connect({

@@ -155,6 +155,12 @@ type HeaderWithBackButtonProps = Partial<ChildrenProps> & {
 
     /** The URL link associated with the attachment's subtitle, if available */
     subTitleLink?: string;
+
+    /** The right icon to display */
+    rightIcon?: IconAsset;
+
+    /** The method to trigger when pressing the right icon */
+    onRightIconPress?: () => void;
 };
 
 export type {ThreeDotsMenuItem};

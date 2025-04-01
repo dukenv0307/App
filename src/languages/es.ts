@@ -867,6 +867,9 @@ const translations = {
         deleteReceipt: 'Eliminar recibo',
         deleteConfirmation: '¿Estás seguro de que quieres borrar este recibo?',
         addReceipt: 'Añadir recibo',
+        multiCaptureGuide: 'Escanear múltiples recibos',
+        multiCaptureGuideDescription: 'Toma fotos de todos tus recibos a la vez, luego confirma los detalles tú mismo o deja que SmartScan se encargue.',
+        multiCaptureMode: 'Modo de captura múltiple',
     },
     quickAction: {
         scanReceipt: 'Escanear recibo',
@@ -899,6 +902,7 @@ const translations = {
         share: 'Compartir',
         participants: 'Participantes',
         createExpense: 'Crear gasto',
+        createMultipleExpenses: ({total}: {total: number}) => `Crear ${total} ${total === 1 ? 'gasto' : 'gastos'}`,
         paySomeone: ({name}: PaySomeoneParams = {}) => `Pagar a ${name ?? 'alguien'}`,
         chooseRecipient: 'Elige destinatario',
         createExpenseWithAmount: ({amount}: {amount: string}) => `Crear un gasto de ${amount}`,
@@ -6509,6 +6513,7 @@ const translations = {
             tryItOut: 'Prueba esto',
             noThanks: 'No, gracias',
         },
+        multiScanNavigationTooltip: 'Usa las flechas para navegar entre los gastos',
     },
     discardChangesConfirmation: {
         title: '¿Descartar cambios?',

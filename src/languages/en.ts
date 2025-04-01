@@ -872,6 +872,9 @@ const translations = {
         deleteReceipt: 'Delete receipt',
         deleteConfirmation: 'Are you sure you want to delete this receipt?',
         addReceipt: 'Add receipt',
+        multiCaptureGuide: 'Scan multiple receipts',
+        multiCaptureGuideDescription: 'Snap photos of all your receipts at once, then confirm details yourself or let SmartScan handle it.',
+        multiCaptureMode: 'Multi-capture mode',
     },
     quickAction: {
         scanReceipt: 'Scan receipt',
@@ -905,6 +908,7 @@ const translations = {
         share: 'Share',
         participants: 'Participants',
         createExpense: 'Create expense',
+        createMultipleExpenses: ({total}: {total: number}) => `Create ${total} ${total === 1 ? 'expense' : 'expenses'}`,
         chooseRecipient: 'Choose recipient',
         createExpenseWithAmount: ({amount}: {amount: string}) => `Create ${amount} expense`,
         confirmDetails: 'Confirm details',
@@ -5988,6 +5992,7 @@ const translations = {
             tryItOut: 'Try it out',
             noThanks: 'No thanks',
         },
+        multiScanNavigationTooltip: 'Use the arrows to cycle through expenses',
     },
     discardChangesConfirmation: {
         title: 'Discard changes?',

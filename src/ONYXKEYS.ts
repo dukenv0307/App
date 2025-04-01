@@ -231,6 +231,9 @@ const ONYXKEYS = {
     /** A timestamp of when the last full reconnect should have been done */
     NVP_RECONNECT_APP_IF_FULL_RECONNECT_BEFORE: 'nvp_reconnectAppIfFullReconnectBefore',
 
+    /** Whether the user has tried multi-scan mode yet */
+    NVP_TRY_MULTI_SCAN: 'nvp_tryMultiScan',
+
     /** Plaid data (access tokens, bank accounts ...) */
     PLAID_DATA: 'plaidData',
 
@@ -1097,6 +1100,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.LAST_FULL_RECONNECT_TIME]: string;
     [ONYXKEYS.TRAVEL_PROVISIONING]: OnyxTypes.TravelProvisioning;
     [ONYXKEYS.NVP_SIDE_PANE]: OnyxTypes.SidePane;
+    [ONYXKEYS.NVP_TRY_MULTI_SCAN]: boolean;
 };
 
 type OnyxDerivedValuesMapping = {

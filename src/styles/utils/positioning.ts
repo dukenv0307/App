@@ -24,6 +24,9 @@ export default {
     tn0Half: {
         top: -2,
     },
+    t4: {
+        top: 16,
+    },
     t5: {
         top: 20,
     },

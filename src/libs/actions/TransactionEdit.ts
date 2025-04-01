@@ -81,8 +81,23 @@ function removeDraftTransaction(transactionID: string | undefined) {
     if (!transactionID) {
         return;
     }
-
     Onyx.set(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, null);
 }
 
-export {createBackupTransaction, removeBackupTransaction, restoreOriginalTransactionFromBackup, createDraftTransaction, removeDraftTransaction};
+function removeMultiDraftTransactions() {
+    const conn = Onyx.connect({
+        key: `${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}`,
+        waitForCollectionCallback: true,
+        callback: (transactions) => {
+            Onyx.disconnect(conn);
+            Object.values(transactions ?? {}).forEach((transaction) => {
+                if (transaction?.transactionID === '1') {
+                    return;
+                }
+                removeDraftTransaction(transaction?.transactionID);
+            });
+        },
+    });
+}
+
+export {createBackupTransaction, removeBackupTransaction, restoreOriginalTransactionFromBackup, createDraftTransaction, removeDraftTransaction, removeMultiDraftTransactions};

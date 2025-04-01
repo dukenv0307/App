@@ -212,6 +212,10 @@ function IOURequestStepParticipants({
         waitForKeyboardDismiss(() => {
             // If the backTo parameter is set, we should navigate back to the confirmation screen that is already on the stack.
             if (backTo) {
+                if (backTo.includes('isMultiCapture')) {
+                    Navigation.goBack(backTo);
+                    return;
+                }
                 // We don't want to compare params because we just changed the participants.
                 Navigation.goBack(route, {compareParams: false});
             } else {

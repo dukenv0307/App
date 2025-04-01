@@ -55,6 +55,7 @@ function ProductTrainingContextProvider({children}: ChildrenProps) {
     });
 
     const [dismissedProductTraining] = useOnyx(ONYXKEYS.NVP_DISMISSED_PRODUCT_TRAINING);
+
     const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const [modal] = useOnyx(ONYXKEYS.MODAL);
@@ -121,6 +122,7 @@ function ProductTrainingContextProvider({children}: ChildrenProps) {
                 tooltipName !== CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_TOOLTIP &&
                 tooltipName !== CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_TOOLTIP_MANAGER &&
                 tooltipName !== CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.SCAN_TEST_CONFIRMATION &&
+                tooltipName !== CONST.PRODUCT_TRAINING_TOOLTIP_NAMES.MULTI_SCAN_TOOLTIP &&
                 isModalVisible
             ) {
                 return false;

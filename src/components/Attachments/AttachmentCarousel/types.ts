@@ -36,4 +36,15 @@ type AttachmentCarouselProps = {
     attachmentLink?: string;
 };
 
-export type {AttachmentCarouselProps, UpdatePageProps};
+type AttachmentCarouselViewProps = {
+    reportID?: string;
+    source: AttachmentSource;
+    onNavigate?: (attachment: Attachment) => void;
+    onClose: () => void;
+    attachments: Attachment[];
+    page: number;
+    setPage: (page: number) => void;
+    attachmentID?: string;
+};
+
+export type {AttachmentCarouselProps, UpdatePageProps, AttachmentCarouselViewProps};

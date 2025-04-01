@@ -1,6 +1,6 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/core';
 import {Str} from 'expensify-common';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Alert, AppState, Image, InteractionManager, View} from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
@@ -31,6 +31,7 @@ import useLocalize from '@hooks/useLocalize';
 import usePolicy from '@hooks/usePolicy';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {removeMultiDraftTransactions} from '@libs/actions/TransactionEdit';
 import {dismissProductTraining} from '@libs/actions/Welcome';
 import {readFileAsync, resizeImageIfNeeded, showCameraPermissionsAlert, splitExtensionFromFileName} from '@libs/fileDownload/FileUtils';
 import getPhotoSource from '@libs/fileDownload/getPhotoSource';
@@ -58,6 +59,7 @@ import {
     setMoneyRequestParticipants,
     setMoneyRequestParticipantsFromReport,
     setMoneyRequestReceipt,
+    setMoneyRequestReceiptsDraft,
     startSplitBill,
     trackExpense,
     updateLastLocationPermissionPrompt,
@@ -68,7 +70,9 @@ import ROUTES from '@src/ROUTES';
 import type {Participant} from '@src/types/onyx/IOU';
 import type {Receipt} from '@src/types/onyx/Transaction';
 import CameraPermission from './CameraPermission';
+import MultiScanNotification from './MultiScanNotification';
 import NavigationAwareCamera from './NavigationAwareCamera/Camera';
+import ReceiptsList from './ReceiptList';
 import type IOURequestStepScanProps from './types';
 
 function IOURequestStepScan({
@@ -109,6 +113,8 @@ function IOURequestStepScan({
     const isTabActive = useIsFocused();
 
     const [pdfFile, setPdfFile] = useState<null | FileObject>(null);
+    const [isMultiCapture, setIsMultiCapture] = useState(false);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
 
     const defaultTaxCode = getDefaultTaxCode(policy, transaction);
     const transactionTaxCode = (transaction?.taxCode ? transaction?.taxCode : defaultTaxCode) ?? '';
@@ -240,32 +246,60 @@ function IOURequestStepScan({
     const navigateToParticipantPage = useCallback(() => {
         switch (iouType) {
             case CONST.IOU.TYPE.REQUEST:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.SUBMIT, transactionID, reportID, undefined, undefined, isMultiCapture));
                 break;
             case CONST.IOU.TYPE.SEND:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.PAY, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(CONST.IOU.TYPE.PAY, transactionID, reportID, undefined, undefined, isMultiCapture));
                 break;
             default:
-                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, transactionID, reportID));
+                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_PARTICIPANTS.getRoute(iouType, transactionID, reportID, undefined, undefined, isMultiCapture));
         }
-    }, [iouType, reportID, transactionID]);
+    }, [iouType, reportID, transactionID, isMultiCapture]);
 
     const navigateToConfirmationPage = useCallback(
         (isTestTransaction = false) => {
             switch (iouType) {
                 case CONST.IOU.TYPE.REQUEST:
-                    Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.SUBMIT, transactionID, reportID));
+                    Navigation.navigate(
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            CONST.IOU.TYPE.SUBMIT,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
+                    );
                     break;
                 case CONST.IOU.TYPE.SEND:
-                    Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.PAY, transactionID, reportID));
+                    Navigation.navigate(
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            CONST.IOU.TYPE.PAY,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
+                    );
                     break;
                 default:
                     Navigation.navigate(
-                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(CONST.IOU.ACTION.CREATE, isTestTransaction ? CONST.IOU.TYPE.SUBMIT : iouType, transactionID, reportID),
+                        ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
+                            CONST.IOU.ACTION.CREATE,
+                            isTestTransaction ? CONST.IOU.TYPE.SUBMIT : iouType,
+                            transactionID,
+                            reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
+                        ),
                     );
             }
         },
-        [iouType, reportID, transactionID],
+        [iouType, reportID, transactionID, isMultiCapture],
     );
 
     const createTransaction = useCallback(
@@ -309,7 +343,7 @@ function IOURequestStepScan({
     );
 
     const navigateToConfirmationStep = useCallback(
-        (file: FileObject, source: string, locationPermissionGranted = false, isTestTransaction = false) => {
+        (file: FileObject, source: string, locationPermissionGranted = false, isTestTransaction = false, shouldNavigate = true) => {
             if (backTo) {
                 Navigation.goBack(backTo);
                 return;
@@ -347,6 +381,7 @@ function IOURequestStepScan({
                             currency: transaction?.currency ?? 'USD',
                             taxCode: transactionTaxCode,
                             taxAmount: transactionTaxAmount,
+                            shouldNavigate,
                         });
                         return;
                     }
@@ -381,6 +416,7 @@ function IOURequestStepScan({
                                                 long: successData.coords.longitude,
                                             },
                                         },
+                                        shouldNavigate,
                                     });
                                 } else {
                                     requestMoney({
@@ -406,6 +442,7 @@ function IOURequestStepScan({
                                             receipt,
                                             billable: false,
                                         },
+                                        shouldNavigate,
                                     });
                                 }
                             },
@@ -426,7 +463,7 @@ function IOURequestStepScan({
                     createTransaction(receipt, participant);
                     return;
                 }
-                setMoneyRequestParticipantsFromReport(transactionID, report).then(() => {
+                setMoneyRequestParticipantsFromReport(transactionID, report, isMultiCapture ? receipts.length : undefined).then(() => {
                     navigateToConfirmationPage();
                 });
                 return;
@@ -436,20 +473,23 @@ function IOURequestStepScan({
             // and an optimistic reportID was generated. In that case, the next step is to select the participants for this expense.
             if (iouType === CONST.IOU.TYPE.CREATE && isPaidGroupPolicy(activePolicy) && activePolicy?.isPolicyExpenseChatEnabled && !shouldRestrictUserBillableActions(activePolicy.id)) {
                 const activePolicyExpenseChat = getPolicyExpenseChat(currentUserPersonalDetails.accountID, activePolicy?.id);
-                setMoneyRequestParticipantsFromReport(transactionID, activePolicyExpenseChat).then(() => {
+                setMoneyRequestParticipantsFromReport(transactionID, activePolicyExpenseChat, isMultiCapture ? receipts.length : undefined).then(() => {
                     Navigation.navigate(
                         ROUTES.MONEY_REQUEST_STEP_CONFIRMATION.getRoute(
                             CONST.IOU.ACTION.CREATE,
                             iouType === CONST.IOU.TYPE.CREATE ? CONST.IOU.TYPE.SUBMIT : iouType,
                             transactionID,
                             activePolicyExpenseChat?.reportID,
+                            undefined,
+                            isMultiCapture,
+                            Navigation.getActiveRoute(),
                         ),
                     );
                 });
             } else {
                 if (isTestTransaction) {
                     const managerMcTestParticipant = getManagerMcTestParticipant() ?? {};
-                    setMoneyRequestParticipants(transactionID, [{...managerMcTestParticipant, selected: true}]);
+                    setMoneyRequestParticipants(transactionID, [{...managerMcTestParticipant, selected: true}], isMultiCapture ? receipts.length : undefined);
                     navigateToConfirmationPage(true);
                     return;
                 }
@@ -476,6 +516,8 @@ function IOURequestStepScan({
             transactionTaxCode,
             transactionTaxAmount,
             policy,
+            isMultiCapture,
+            receipts.length,
             reportNameValuePairs,
         ],
     );
@@ -584,6 +626,24 @@ function IOURequestStepScan({
         });
     };
 
+    const toggleMultiCapture = useCallback(() => {
+        setIsMultiCapture(!isMultiCapture);
+    }, [isMultiCapture]);
+
+    const processReceiptsAndNavigate = () => {
+        setMoneyRequestReceiptsDraft(receipts);
+        if (shouldSkipConfirmation) {
+            receipts.forEach((receipt, index) => {
+                navigateToConfirmationStep(receipt as FileObject, receipt.source ?? '', false, false, index === receipts.length - 1);
+            });
+        } else {
+            const firstReceipt = receipts.at(0);
+            if (firstReceipt) {
+                navigateToConfirmationStep(firstReceipt as FileObject, firstReceipt.source ?? '');
+            }
+        }
+    };
+
     const capturePhoto = useCallback(() => {
         if (!camera.current && (cameraPermissionStatus === RESULTS.DENIED || cameraPermissionStatus === RESULTS.BLOCKED)) {
             askForPermissions();
@@ -630,6 +690,11 @@ function IOURequestStepScan({
                     .then((photo: PhotoFile) => {
                         // Store the receipt on the transaction object in Onyx
                         const source = getPhotoSource(photo.path);
+                        if (isMultiCapture) {
+                            setReceipts([...receipts, {source, name: photo.path}]);
+                            setDidCapturePhoto(false);
+                            return;
+                        }
                         setMoneyRequestReceipt(transactionID, source, photo.path, !isEditing);
 
                         readFileAsync(
@@ -681,7 +746,13 @@ function IOURequestStepScan({
         updateScanAndNavigate,
         transaction?.amount,
         iouType,
+        isMultiCapture,
+        receipts,
     ]);
+
+    useEffect(() => {
+        removeMultiDraftTransactions();
+    }, []);
 
     // Wait for camera permission status to render
     if (cameraPermissionStatus == null) {
@@ -766,7 +837,7 @@ function IOURequestStepScan({
                             </View>
                         )}
                         {cameraPermissionStatus === RESULTS.GRANTED && device != null && (
-                            <View style={[styles.cameraView]}>
+                            <View style={[styles.cameraView, styles.pRelative]}>
                                 <GestureDetector gesture={tapGesture}>
                                     <View style={styles.flex1}>
                                         <NavigationAwareCamera
@@ -780,6 +851,34 @@ function IOURequestStepScan({
                                         <Animated.View style={[styles.cameraFocusIndicator, cameraFocusIndicatorAnimatedStyle]} />
                                     </View>
                                 </GestureDetector>
+                                {true && (
+                                    <View
+                                        style={[
+                                            styles.pAbsolute,
+                                            styles.r4,
+                                            styles.t4,
+                                            styles.borderRadiusNormal,
+                                            styles.buttonDefaultBG,
+                                            {width: 40, height: 40},
+                                            styles.alignItemsCenter,
+                                            styles.justifyContentCenter,
+                                        ]}
+                                    >
+                                        <PressableWithFeedback
+                                            role={CONST.ROLE.BUTTON}
+                                            accessibilityLabel={translate('receipt.flash')}
+                                            disabled={cameraPermissionStatus !== RESULTS.GRANTED}
+                                            onPress={() => setFlash((prevFlash) => !prevFlash)}
+                                        >
+                                            <Icon
+                                                height={16}
+                                                width={16}
+                                                src={flash ? Expensicons.Bolt : Expensicons.boltSlash}
+                                                fill={theme.textSupporting}
+                                            />
+                                        </PressableWithFeedback>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </View>
@@ -820,23 +919,27 @@ function IOURequestStepScan({
                             height={CONST.RECEIPT.SHUTTER_SIZE}
                         />
                     </PressableWithFeedback>
-                    {hasFlash && (
-                        <PressableWithFeedback
-                            role={CONST.ROLE.BUTTON}
-                            accessibilityLabel={translate('receipt.flash')}
-                            style={[styles.alignItemsEnd]}
-                            disabled={cameraPermissionStatus !== RESULTS.GRANTED}
-                            onPress={() => setFlash((prevFlash) => !prevFlash)}
-                        >
-                            <Icon
-                                height={32}
-                                width={32}
-                                src={flash ? Expensicons.Bolt : Expensicons.boltSlash}
-                                fill={theme.textSupporting}
-                            />
-                        </PressableWithFeedback>
-                    )}
+
+                    <PressableWithFeedback
+                        role={CONST.ROLE.BUTTON}
+                        accessibilityLabel="multiCapture"
+                        onPress={toggleMultiCapture}
+                    >
+                        <Icon
+                            height={32}
+                            width={32}
+                            src={isMultiCapture ? Expensicons.MultiScanModeOn : Expensicons.MultiScanModeOff}
+                        />
+                    </PressableWithFeedback>
                 </View>
+                {isMultiCapture && (
+                    <ReceiptsList
+                        receipts={receipts}
+                        isMultiCapture={isMultiCapture}
+                        onNext={processReceiptsAndNavigate}
+                        setReceipts={setReceipts}
+                    />
+                )}
                 {startLocationPermissionFlow && !!fileResize && (
                     <LocationPermissionModal
                         startPermissionFlow={startLocationPermissionFlow}
@@ -849,6 +952,7 @@ function IOURequestStepScan({
                     />
                 )}
             </View>
+            <MultiScanNotification isMultiCapture={isMultiCapture} />
         </StepScreenWrapper>
     );
 }
