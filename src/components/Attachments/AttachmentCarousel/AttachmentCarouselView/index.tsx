@@ -65,7 +65,7 @@ function AttachmentCarouselView({attachmentID, reportID, source, onNavigate, onC
         [modalStyles.borderWidth, modalStyles.marginHorizontal, windowWidth],
     );
     const [activeAttachmentID, setActiveAttachmentID] = useState<AttachmentSource | null>(attachmentID ?? source);
-    
+
     const {shouldShowArrows, setShouldShowArrows, autoHideArrows, cancelAutoHideArrows} = useCarouselArrows();
     const {handleTap, handleScaleChange, isScrollEnabled} = useCarouselContextEvents(setShouldShowArrows);
 
