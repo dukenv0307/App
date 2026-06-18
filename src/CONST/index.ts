@@ -77,6 +77,7 @@ const keyInputLeftArrow = KeyCommand?.constants?.keyInputLeftArrow ?? 'keyInputL
 const keyInputRightArrow = KeyCommand?.constants?.keyInputRightArrow ?? 'keyInputRightArrow';
 const keyInputSpace = ' ';
 
+
 // describes if a shortcut key can cause navigation
 const KEYBOARD_SHORTCUT_NAVIGATION_TYPE = 'NAVIGATION_SHORTCUT';
 
